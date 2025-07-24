@@ -47,7 +47,7 @@ class Schedule:
             if not player.available:
                 continue
 
-            if player.late and number < self.inning_of_late_arrivals:
+            if player.late and number < self.config.inning_of_late_arrivals:
                 late.append(player)
                 continue
 
@@ -107,8 +107,6 @@ class Schedule:
 
                 if inning.try_finding_any_player(position):
                     continue
-
-            inning.optimize_lineup(positions)
 
             if config.players_required == 8:
                 inning.positions["C"] = Player("⚠ COURTESY ⚠", True, False, False, ["C"], [0])
