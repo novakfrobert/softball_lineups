@@ -108,6 +108,8 @@ class Schedule:
                 if inning.try_finding_any_player(position):
                     continue
 
+            inning.optimize_lineup(positions)
+
             if config.players_required == 8:
                 inning.positions["C"] = Player("⚠ COURTESY ⚠", True, False, False, ["C"], [0])
 
