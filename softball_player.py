@@ -33,4 +33,4 @@ class Player:
             self.positions_stengths[to_pos] = str
 
     def __repr__(self):
-        return f"{self.name} ({self.innings_played})- Female: {self.female};  Available: {self.available};  Late: {self.late};  {self.positions_stengths}\n"
+        return f"{self.name} ({self.innings_played})- Female: {self.female};  Available: {self.available};  Late: {self.late};\n"

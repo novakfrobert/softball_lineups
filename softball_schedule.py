@@ -27,15 +27,16 @@ class Schedule:
         self.positions = []
         self.warnings = []
 
-    def get_positions(self):
-        if self.config.players_required == 10:
+    @staticmethod
+    def get_positions(num_players):
+        if num_players == 10:
             return ["P", "SS", "LF", "LCF", "3B", "1B", "2B", "RCF", "RF", "C"] # ordered by most important
-        elif self.config.players_required == 9:
+        elif num_players == 9:
             return ["P", "SS", "LF", "CF", "3B", "1B", "2B", "RF", "C"] # ordered by most important
-        elif self.config.players_required == 8:
+        elif num_players == 8:
             return ["P", "SS", "LF", "CF", "3B", "1B", "2B", "RF"] # ordered by most important
         else:
-            raise Exception(f"Invalid number of players {self.players_required}")
+            raise Exception(f"Invalid number of players {num_players}")
 
     def add_inning(self):
         number = len(self.innings) + 1
@@ -95,7 +96,7 @@ class Schedule:
 
             inning: Inning = schedule.add_inning()
             
-            positions = schedule.get_positions()
+            positions = Schedule.get_positions(config.players_required)
             for position in positions:
 
                 if inning.must_be_female(config.players_required, config.females_required):

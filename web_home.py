@@ -1,4 +1,5 @@
 import streamlit as st
+from softball_beam_schedule import beam_schedule
 from softball_data import load_players_from_csv, players_to_df, dataframe_to_players, get_default_players
 from softball_player import Player
 from softball_schedule import Schedule, ScheduleConfig
@@ -36,6 +37,12 @@ def render_home():
 
         with col_main:
             schedule: Schedule = Schedule.create(players, schedule_config)
+
+            # players = players
+            # for p in players:
+                # p.innings_played = 0
+            # beam_schedule(schedule_config.number_innings, Schedule.get_positions(schedule_config.players_required), players, schedule_config.females_required)
+
             render_schedule(schedule)
 
     print("Finish")

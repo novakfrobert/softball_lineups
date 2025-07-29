@@ -26,21 +26,25 @@ def sort_players(position: str, players: List[Player]):
 
 
 def load_players_from_csv(csv_file: str):
+
     players = []
     reader = csv.reader(csv_file.read().decode("utf-8-sig").splitlines())
     header = next(reader)  # skip header
+
+    # sometimes a downloaded csv will have blank column 1 or a column with just row numbers. If so, offset everything by 1
+    offset = 1 if header[0] == "" else 0
+    col = lambda i: i + offset
     
     # The first 4 columns need to be in a specific order
     player_info_header = ["name", "female", "available", "late"]
-    assert [col.lower() for col in header[:4]] == player_info_header, \
+    assert [col.lower() for col in header[col(0):col(4)]] == player_info_header, \
            f"The first 4 columns must be {player_info_header} but was given {header[:4]}"
 
     # Position columns must contain all the following positions
     position_header = ["P", "SS", "LF", "LCF", "3B", "2B", "1B", "RCF", "RF", "C"]
-    assert [col.upper() for col in sorted(header[4:])] == sorted(position_header), \
+    assert [col.upper() for col in sorted(header[col(4):])] == sorted(position_header), \
         f"The position columns must contain all the following positions {position_header} but was given {header[4:]}"
     
-    # The 
     for row_num, row in enumerate(reader, 2):
 
         # Skip empty rows
@@ -52,15 +56,15 @@ def load_players_from_csv(csv_file: str):
                f"Empty value on line {row_num}"
 
         # Extract info from first 4 rows
-        name = row[0]
-        female = row[1].strip().lower() == "true"
-        available = row[2].strip().lower() == "true"
-        late = row[3].strip().lower() == "true"
+        name = row[col(0)]
+        female = row[col(1)].strip().lower() == "true"
+        available = row[col(2)].strip().lower() == "true"
+        late = row[col(3)].strip().lower() == "true"
 
         # Extract position data
         positions = []
         strengths = []
-        for i, str in enumerate(row[4:], 4):
+        for i, str in enumerate(row[col(4):], col(4)):
             if str:
                 positions.append(header[i])
                 strengths.append(int(str))
@@ -85,16 +89,6 @@ def players_to_df(players: List["Player"]) -> pd.DataFrame:
         for pos in positions:
             row[pos] = p.positions_stengths.get(pos, float("NaN"))
         data.append(row)
-
-    # If no data, insert one default row
-    # if not data:
-    #     data.append({
-    #         "Name": None,
-    #         "Female": False,
-    #         "Available": True,
-    #         "Late": False,
-    #         **{pos: float("NaN") for pos in positions}
-    #     })
 
     # Create the dataframe
     df = pd.DataFrame(data)
