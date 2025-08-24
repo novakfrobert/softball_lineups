@@ -1,9 +1,11 @@
 from typing import Dict, Set
 
+from softball_positions import Position
+
 class Player:
     name: str
-    positions: Set[str]
-    positions_stengths: Dict[str, int]
+    positions: Set[Position]
+    positions_stengths: Dict[Position, int]
     available: bool
     innings_played: int
     late: bool
@@ -33,4 +35,4 @@ class Player:
             self.positions_stengths[to_pos] = str
 
     def __repr__(self):
-        return f"{self.name} ({self.innings_played})- Female: {self.female};  Available: {self.available};  Late: {self.late};\n"
+        return f"{self.name} ({self.innings_played})- Female: {self.female};  Available: {self.available};  Late: {self.late};  Positions: {self.positions_stengths}\n"

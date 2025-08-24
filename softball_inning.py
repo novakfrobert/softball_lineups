@@ -4,13 +4,14 @@ from softball_player import Player
 from collections import defaultdict
 from scipy.optimize import linear_sum_assignment
 from softball_data import sort_players
+from softball_positions import Position
 import numpy as np
 
 class Inning:
     number: int
 
     bench: Dict[str, Player] # key is name
-    positions: Dict[str, Player] # key is position
+    positions: Dict[Position, Player]
 
     late: List[Player] # key is name
 
@@ -38,7 +39,7 @@ class Inning:
             res += f"\t\t{k}\n"
         return res
     
-    def move_to_field(self, player: Player, position: str):
+    def move_to_field(self, player: Player, position: Position):
         self.bench.pop(player.name)
         self.positions[position] = player
         self.playing_count += 1
@@ -54,21 +55,21 @@ class Inning:
 
         return players_by_play_count[fewest]
     
-    def try_finding_any_player(self, position: str):
+    def try_finding_any_player(self, position: Position):
         if not self.bench: return False
         bench = self.get_least_played_players()
         random.shuffle(bench)
         self.move_to_field(bench[0], position)
         return True
     
-    def try_finding_optimal_player(self, position: str):
+    def try_finding_optimal_player(self, position: Position):
         bench = [p for p in self.bench.values() if position in p.positions]
         if not bench: return False
         sort_players(position, bench)
         self.move_to_field(bench[0], position)
         return True
     
-    def try_finding_female_player(self, position: str):
+    def try_finding_female_player(self, position: Position):
         # try getting female at this position
         bench = [p for p in self.bench.values() if position in p.positions and p.female]
         sort_players(position, bench)
@@ -86,15 +87,13 @@ class Inning:
         females_remaining = females_required - self.females_playing
         return slots_remaining == females_remaining
     
-    def optimize_lineup(self, positions: List[str]):
+    def optimize_lineup(self, positions: List[Position]):
         n = len(self.positions)
 
         positions = list(self.positions.keys())
         fielders = list(self.positions.values())
 
-        weights = {"SS": 100, "P": 100, "C": 5, "LF": 90, "LCF": 90, "3B": 95, "2B": 60, "1B": 70, "CF": 80, "RF": 15, "RCF": 25}
-        weights = {pos: weights[pos] for pos in positions}
-        max_score = sum(10 * w for w in weights.values())
+        max_score = sum(10 * pos.weight for pos in positions)
 
         # Build score matrix: rows = players, cols = positions
         score_matrix = np.full((n, n), -1e9)  # Large negative default for invalid positions
@@ -103,7 +102,7 @@ class Inning:
             for j, pos in enumerate(positions):
                 if pos in player.positions:
                     strength = player.positions_stengths.get(pos, 0)
-                    weight = weights.get(pos, 1.0)
+                    weight = pos.weight
                     score_matrix[i][j] = strength * weight
 
         # Solve using the Hungarian algorithm (maximize by minimizing the negative scores)

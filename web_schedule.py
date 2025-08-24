@@ -23,7 +23,7 @@ def render_schedule(schedule: Schedule):
 
         for inning in schedule.innings:
             st.header(f"Inning {inning.number}", divider=True)
-            playing = '\n'.join([f"{pos} {player.name}" for pos, player in inning.positions.items()])
+            playing = '\n'.join([f"{pos.name} {player.name}" for pos, player in inning.positions.items()])
             sitting = '\n'.join([f"{name}" for name in inning.bench])
             late = '\n'.join([f"{player.name}" for player in inning.late])
 

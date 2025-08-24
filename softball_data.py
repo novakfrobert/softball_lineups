@@ -3,22 +3,23 @@ import csv
 import numpy as np
 import pandas as pd
 from softball_player import Player
+from softball_positions import _1B, _2B, _3B, _C, _LCF, _LF, _P, _RCF, _RF, _SS, get_position
 from typing import List
 
 def get_default_players():
     return [
-        Player("Frank", True, False, False, ["LF","LCF","RCF"], [9, 8, 8]),
-        Player("Joe", True, False, False, ["LF","LCF","RF"], [8, 9, 8]),
-        Player("Janelle", True, True, False, ["2B", "3B", "RF", "P"], [9, 5, 4, 5]),
-        Player("Frido", True, False, False, ["LF","LCF","RCF", "SS", "3B"], [6, 6, 6, 6, 6]),
-        Player("Dude", True, False, False, ["1B","LF", "3B"], [8, 10, 10]),
-        Player("Guy", True, False, False, ["C","RF","RCF", "2B", "3B", "1B"], [5, 5, 5, 3, 2, 3]),
-        Player("Jackie", True, True, False, ["C","LCF","RCF"], [6, 6, 6]),
-        Player("Daniella", True, True, False, ["2B","RCF","RF"], [6, 6, 6]),
-        Player("Nick", True, False, False, ["SS","1B","RCF", "LCF", "3B"], [7, 8, 7, 7, 7]),
-        Player("Jacob", True, False, False, ["2B", "1B"], [9, 6]),
-        Player("Ruby", True, True, False, ["3B","RF","C", "2B"], [6, 7, 7, 4]),
-        Player("Gary", True, False, False, ["SS","LF","LCF"], [7, 7, 7])
+        Player("Frank", True, False, False, [_LF, _LCF, _RCF], [9, 8, 8]),
+        Player("Joe", True, False, False, [_LF, _LCF, _RF], [8, 9, 8]),
+        Player("Janelle", True, True, False, [_2B, _3B, _RF, _P], [9, 5, 4, 5]),
+        Player("Frido", True, False, False, [_LF, _LCF, _RCF, _SS, _3B], [6, 6, 6, 6, 6]),
+        Player("Dude", True, False, False, [_1B, _LF, _3B], [8, 10, 10]),
+        Player("Guy", True, False, False, [_C, _RF, _RCF, _2B, _3B, _1B], [5, 5, 5, 3, 2, 3]),
+        Player("Jackie", True, True, False, [_C, _LCF, _RCF], [6, 6, 6]),
+        Player("Daniella", True, True, False, [_2B, _RCF, _RF], [6, 6, 6]),
+        Player("Nick", True, False, False, [_SS, _1B, _RCF, _LCF, _3B], [7, 8, 7, 7, 7]),
+        Player("Jacob", True, False, False, [_2B, _1B], [9, 6]),
+        Player("Ruby", True, True, False, [_3B, _RF, _C, _2B], [6, 7, 7, 4]),
+        Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7])
     ]
 
 def sort_players(position: str, players: List[Player]):
@@ -66,19 +67,20 @@ def load_players_from_csv(csv_file: str):
         strengths = []
         for i, str in enumerate(row[col(4):], col(4)):
             if str:
-                positions.append(header[i])
+                positions.append(get_position(header[i]))
                 strengths.append(int(str))
 
         players.append(Player(name, available, female, late, positions, strengths))
 
     return players
 
-def players_to_df(players: List["Player"]) -> pd.DataFrame:
+def players_to_df(players: List[Player]) -> pd.DataFrame:
     # Define all possible positions
     positions = ["P", "SS", "LF", "LCF", "3B", "2B", "1B", "RCF", "RF", "C"]
 
     # Collect data from players
     data = []
+    print("pre-df", players)
     for p in players:
         row = {
             "Name": p.name,
@@ -86,8 +88,14 @@ def players_to_df(players: List["Player"]) -> pd.DataFrame:
             "Available": p.available,
             "Late": p.late,
         }
+        print(p.positions_stengths)
         for pos in positions:
-            row[pos] = p.positions_stengths.get(pos, float("NaN"))
+            ppos = get_position(pos)
+            for k,v in p.positions_stengths.items():
+                if k.name == pos:
+                    print(k, hash(k), hash(ppos), k == ppos, k.name == ppos.name, k.weight == ppos.weight)
+            print(pos, p.positions_stengths.get(ppos, float("NaN")))
+            row[pos] = p.positions_stengths.get(ppos, float("NaN"))
         data.append(row)
 
     # Create the dataframe
@@ -113,6 +121,7 @@ def players_to_df(players: List["Player"]) -> pd.DataFrame:
                 df[col] = None
         df[col] = df[col].astype(dtype)
 
+    print(df)
     return df
 
 # Convert edited dicts back to Player list
@@ -149,7 +158,7 @@ def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
             strength = row.get(pos)
             if strength is None or (isinstance(strength, float) and math.isnan(strength)):
                 continue
-            player_positions.append(pos)
+            player_positions.append(get_position(pos))
             strengths.append(float(strength))
 
         # Skip rows with no valid position strengths
