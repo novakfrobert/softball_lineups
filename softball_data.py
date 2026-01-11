@@ -11,15 +11,23 @@ def get_default_players():
         Player("Frank", True, False, False, [_LF, _LCF, _RCF], [9, 8, 8]),
         Player("Joe", True, False, False, [_LF, _LCF, _RF], [8, 9, 8]),
         Player("Janelle", True, True, False, [_2B, _3B, _RF, _P], [9, 5, 4, 5]),
+        Player("Kristy", True, True, False, [_SS, _3B, _RF, _P, _C], [6, 7, 4, 5, 3]),
         Player("Frido", True, False, False, [_LF, _LCF, _RCF, _SS, _3B], [6, 6, 6, 6, 6]),
         Player("Dude", True, False, False, [_1B, _LF, _3B], [8, 10, 10]),
         Player("Guy", True, False, False, [_C, _RF, _RCF, _2B, _3B, _1B], [5, 5, 5, 3, 2, 3]),
         Player("Jackie", True, True, False, [_C, _LCF, _RCF], [6, 6, 6]),
         Player("Daniella", True, True, False, [_2B, _RCF, _RF], [6, 6, 6]),
         Player("Nick", True, False, False, [_SS, _1B, _RCF, _LCF, _3B], [7, 8, 7, 7, 7]),
+        Player("Rob", True, False, False, [_2B, _1B, _RCF, _LCF, _3B], [3, 5, 6, 6, 7]),
         Player("Jacob", True, False, False, [_2B, _1B], [9, 6]),
+        Player("Hubie", True, False, False, [_3B, _1B], [4, 6]),
         Player("Ruby", True, True, False, [_3B, _RF, _C, _2B], [6, 7, 7, 4]),
-        Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7])
+        Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),
+        Player("Louis", True, True, False, [_SS, _2B, _1B], [7, 7, 7]),
+        Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
     ]
 
 def sort_players(position: str, players: List[Player]):
@@ -80,7 +88,6 @@ def players_to_df(players: List[Player]) -> pd.DataFrame:
 
     # Collect data from players
     data = []
-    print("pre-df", players)
     for p in players:
         row = {
             "Name": p.name,
@@ -88,13 +95,11 @@ def players_to_df(players: List[Player]) -> pd.DataFrame:
             "Available": p.available,
             "Late": p.late,
         }
-        print(p.positions_stengths)
         for pos in positions:
             ppos = get_position(pos)
             for k,v in p.positions_stengths.items():
                 if k.name == pos:
                     print(k, hash(k), hash(ppos), k == ppos, k.name == ppos.name, k.weight == ppos.weight)
-            print(pos, p.positions_stengths.get(ppos, float("NaN")))
             row[pos] = p.positions_stengths.get(ppos, float("NaN"))
         data.append(row)
 
@@ -121,7 +126,6 @@ def players_to_df(players: List[Player]) -> pd.DataFrame:
                 df[col] = None
         df[col] = df[col].astype(dtype)
 
-    print(df)
     return df
 
 # Convert edited dicts back to Player list

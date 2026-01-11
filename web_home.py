@@ -45,7 +45,7 @@ def render_home():
             # for p in players:
                 # p.innings_played = 0
 
-            BeamSchedule.create(5, 6, players, schedule_config)
+            BeamSchedule.create(5, 2, players, schedule_config)
 
             render_schedule(schedule)
 

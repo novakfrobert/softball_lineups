@@ -8,7 +8,7 @@ from web_player_uploader import render_player_uploader
 def render_players(players: List[Player]):
 
     uploader_key = render_player_uploader()
-    
+
     st.divider()
 
     st.subheader("🔧 Edit Players")

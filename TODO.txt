@@ -1,0 +1,41 @@
+- get beam schedule to work with large team + innings
+    - potentially build trees in 'batches' in order to reduce tree size
+    - Cleanup lineup caching
+    - cleanup depth first + pruning (remove globals, have a tree pruning tracker)
+    - cleanup player id + hashing if needed
+
+- valid warnings when no fair lineups are found
+- might be a bug right now updating page causes no lineups to be created on next schedule creation.  likely due to global variables/state.
+
+- plug algorithm into main page
+- allow user to choose fast or slow algorithm (performance or quality)
+- determine how to track progress for slow algorithm to show to user
+- describe algorithm and big O 
+- add comments to algorithm
+
+- handle what happens when 0 fair lineups
+- change 'late' to 'arrive at inning'
+
+- define web component cleanup better
+- clean up web components, make similar 
+- add comments to components
+
+- can the player/schedule/inning definitions be cleaned up based on the 2 schedule apis?
+
+- add tests that give expected answer with certain groups of players
+
+
+
+11/30/2025 2 hours
+DONE Cache lineups that have been seen before
+DONE quick catchup on what ive done so far
+
+12/7/2025 2 hours
+DONE find valid ways to trim branching. Potentially calc best possible score + best possible standard dev and prune if worse than current answer. Requires switching to depth first.
+
+12/14/2025 5 hours
+DONE compute a score that helps determine how to eliminate lineups from get_fair_lineup().  Don't evaluate lineups obviously below a certain threshold.
+
+1/11/2025 1 hours
+DONE use player id (int) for caching counts instead of name
+DONE improved get_fair_lineup() to operate more cost effectively
