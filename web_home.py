@@ -45,7 +45,8 @@ def render_home():
             # for p in players:
                 # p.innings_played = 0
 
-            BeamSchedule.create(5, 2, players, schedule_config)
+            fairness_index = 2
+            BeamSchedule.create(fairness_index, players, schedule_config)
 
             render_schedule(schedule)
 
