@@ -1,8 +1,11 @@
 - get beam schedule to work with large team + innings
     - potentially build trees in 'batches' in order to reduce tree size
-    - Cleanup lineup caching
-    - cleanup depth first + pruning (remove globals, have a tree pruning tracker)
     - cleanup player id + hashing if needed
+
+- late players working with beam schedule
+- when a new player joins the fray, reset / re-baseline counts
+
+- continued cleanup of beam schedule as needed
 
 - valid warnings when no fair lineups are found
 - might be a bug right now updating page causes no lineups to be created on next schedule creation.  likely due to global variables/state.
@@ -39,3 +42,8 @@ DONE compute a score that helps determine how to eliminate lineups from get_fair
 1/11/2025 1 hours
 DONE use player id (int) for caching counts instead of name
 DONE improved get_fair_lineup() to operate more cost effectively
+
+2/21/2025 2 hours
+DONE cleanup depth first + pruning (remove globals, have a tree pruning tracker)
+DONE Cleanup lineup caching
+STARTED working with late players in beam schedule
