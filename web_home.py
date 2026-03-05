@@ -1,14 +1,15 @@
+import sys
+import traceback
 import streamlit as st
 from softball_beam_schedule import BeamSchedule, get_all_lineups_by_score, get_percentile_item
-from softball_data import load_players_from_csv, players_to_df, dataframe_to_players, get_default_players
-from softball_player import Player
-from softball_schedule import Schedule, ScheduleConfig
+from data.softball_data import load_players_from_csv, players_to_df, dataframe_to_players, get_default_players
+from softball_models.player import Player
+from softball_models.schedule_config import ScheduleConfig
+from scheduler_greedy import GreedySchedule
 from typing import List
-from streamlit_ext import CsvUploader, DataTable
 from web_schedule_options import render_schedule_options
 from web_players import render_players
 from web_schedule import render_schedule
-from softball_positions import get_positions
 
 
 def render_home():
@@ -39,14 +40,20 @@ def render_home():
             schedule_config: ScheduleConfig = render_schedule_options(players)
 
         with col_main:
-            schedule: Schedule = Schedule.create(players, schedule_config)
+            schedule: GreedySchedule = GreedySchedule.create(players, schedule_config)
 
             # players = players
             # for p in players:
                 # p.innings_played = 0
 
             fairness_index = 2
-            BeamSchedule.create(fairness_index, players, schedule_config)
+            sigma_weight = 2
+            try:
+                BeamSchedule.create(sigma_weight, fairness_index, players, schedule_config)
+            except Exception as e:
+                print("Beam schedule failed:", e)
+                print(traceback.print_exc(file=sys.stdout) )
+                print("continuing from failed beam schedule...")
 
             render_schedule(schedule)
 

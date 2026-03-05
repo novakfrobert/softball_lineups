@@ -1,7 +1,7 @@
 from typing import List
-from softball_player import Player
-from softball_inning import Inning
-from softball_positions import get_positions
+from softball_models.player import Player
+from softball_models.inning import Inning
+from softball_models.positions import get_positions
 
 class ScheduleConfig:
     number_innings: int = 6

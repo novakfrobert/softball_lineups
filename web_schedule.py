@@ -1,6 +1,6 @@
 import streamlit as st
-from softball_player import Player
-from softball_schedule import Schedule
+from softball_models.player import Player
+from softball_models.schedule import Schedule
 from typing import List
 
 

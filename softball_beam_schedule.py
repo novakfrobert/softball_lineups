@@ -2,19 +2,17 @@ import traceback
 from types import TracebackType
 from typing import Any, Dict, List, Self, Set, Tuple
 
-from softball_positions import Position, get_positions
-from softball_player import Player
+from softball_models.positions import Position, get_positions
+from softball_models.player import Player
 import statistics
 
-from softball_schedule import ScheduleConfig
+from softball_models.schedule_config import ScheduleConfig
 
-from utils_timing import add_time, print_times
+from utils.timing import add_time, print_times
 
 import time
 import hashlib
 import math
-
-
 
 ########################################
 # Lineup
@@ -133,7 +131,6 @@ class LineupNode:
             self.cumulative_strength = prev.cumulative_strength + lineup.strength
             self.mean = self.cumulative_strength / self.depth
             self.ssd = (lineup.strength - self.mean)*(lineup.strength - prev.mean) + prev.ssd
-            self.score = self._score(self.depth, 2.0)
             self.hash = self._hash()
 
         add_time("lineup node ctor", start)
@@ -168,8 +165,11 @@ class LineupNode:
             node = node.prev
         return statistics.pstdev(strengths)
     
-    def _score(self, depth: int, sigma_weight: float):
-        return self.mean - self.sigma*sigma_weight
+    def rebase_counts(self):
+        minimum_value = min(self.cumulative_counts.values())
+        for key in self.cumulative_counts.keys():
+            self.cumulative_counts[key] -= minimum_value
+
     
     def projected_ideal_mean(self, min_lineup: float, max_lineup: float, sigma_weight: float):
         start = time.time()
@@ -263,8 +263,10 @@ class BeamSchedule:
 
     paths: Set[Any]
 
+    sigma_weight: float
+
     @staticmethod
-    def create(fairness_index: int, players: List[Player], config: ScheduleConfig):
+    def create(sigma_weight: float, fairness_index: int, players: List[Player], config: ScheduleConfig):
 
         start = time.time()
 
@@ -272,12 +274,20 @@ class BeamSchedule:
         schedule.config = config
         schedule.players = players
         schedule.fairness = fairness_index
+
         schedule.late_players = get_late_players(players)
         schedule.early_players = get_early_players(players)
-        schedule.late_lineups = get_all_lineups_by_score(schedule.late_players + schedule.early_players, get_positions(config.players_required), config.females_required)
-        schedule.early_lineups = get_all_lineups_by_score(schedule.early_players, get_positions(config.players_required), config.females_required)
+
+        # TODO get_all_lineups_by_score could take num players, females required, and list of players
+        #      and it needs to be able to handle if not enough players are provided
+        positions = get_positions(config.players_required)
+        schedule.late_lineups = get_all_lineups_by_score(schedule.late_players + schedule.early_players, positions, config.females_required)
+        schedule.early_lineups = get_all_lineups_by_score(schedule.early_players, positions, config.females_required)
+
         schedule.best_score = 0
         schedule.paths = set()
+
+        schedule.sigma_weight = sigma_weight
 
 
         start = time.time()
@@ -352,11 +362,14 @@ class BeamSchedule:
         else:
             return self.early_lineups
         
-    def _get_fairness(self, inning):
-        if self.config.inning_of_late_arrivals >= inning:
-            return self.fairness
-        else:
-            return max(self.fairness, 2*self.config.inning_of_late_arrivals - inning)
+    # def _get_fairness(self, inning):
+    #     if self.config.inning_of_late_arrivals >= inning:
+    #         return self.fairness
+    #     else:
+    #         return max(self.fairness, 2*self.config.inning_of_late_arrivals - inning)
+
+    def _score(self, node: LineupNode):
+        return node.mean - node.sigma*self.sigma_weight
  
     
     def _depth_first(self, node: LineupNode, results: List[Any], current_depth: int = 1):
@@ -371,6 +384,7 @@ class BeamSchedule:
         if current_depth > max_depth:
             # we have a leaf node
             results.append(node)
+            score = self._score(node)
             if self.best_score <= node.score:
                 self.best_score = node.score
             return
@@ -395,6 +409,10 @@ class BeamSchedule:
             try:
                 lineup = get_percentile_item(fair_lineups, percentile)
                 next = LineupNode(lineup, node)
+
+                if current_depth == self.config.inning_of_late_arrivals:
+                    next.rebase_counts()
+
                 if next.hash not in self.paths:
                     self._depth_first(next, results, current_depth+1)
                     node.next.append(next)
@@ -413,8 +431,6 @@ class BeamSchedule:
     def _get_fair_lineups(self, node: LineupNode,  lineups: List[Lineup], inning, minimum: float = 0.0):
         start = time.time()
         fair_lineups = []
-        fairness = self._get_fairness(inning)
-        # print("inning", inning, "late inning", self.config.inning_of_late_arrivals, "fairness", fairness)
 
         #
         # Determine which lineups are 'fair' for this inning
@@ -446,14 +462,14 @@ class BeamSchedule:
                 elif count > max:
                     max = count
 
-                if max - min > fairness:
+                if max - min > self.fairness:
                     fair = False
                     break
 
             if fair:
                 fair_lineups.append(lineup)
 
-        print("Fair lineups found", len(fair_lineups), print(node.cumulative_counts))
+        # print("Fair lineups found", len(fair_lineups), print(node.cumulative_counts))
 
         add_time("get_fair_lineups", start)
 
@@ -469,7 +485,7 @@ def solve_quadratic(a, b, c):
 
     d = b*b - 4*a*c
 
-    print("d", d)
+    # print("d", d)
 
     if d < 0:
         sqrt_d = math.sqrt(-d) * 1j

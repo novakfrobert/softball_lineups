@@ -1,6 +1,6 @@
 from typing import Dict, Set
 
-from softball_positions import Position
+from softball_models.positions import Position
 
 import itertools
 _counter = itertools.count()

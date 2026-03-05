@@ -1,6 +1,7 @@
 import streamlit as st
-from softball_player import Player
-from softball_schedule import Schedule, ScheduleConfig
+from softball_models.player import Player
+from softball_models.schedule import Schedule
+from softball_models.schedule_config import ScheduleConfig
 from typing import List
 
 
@@ -11,7 +12,7 @@ def render_schedule_options(players: List[Player]) -> ScheduleConfig:
     number_players = len([p for p in players if p.available])
     number_females = len([p for p in players if p.female and p.available])
 
-    number_innings = st.number_input("Number of Innings", min_value=1, max_value=9, value=9, key="num_innings")
+    number_innings = st.number_input("Number of Innings", min_value=1, max_value=9, value=6, key="num_innings")
     current_value = min(st.session_state.get("late_inning", 3), number_innings)
     inning_of_late_arrivals = st.number_input("Inning of Late Arrivals", min_value=1, max_value=number_innings, value=current_value, key="late_inning")
 
