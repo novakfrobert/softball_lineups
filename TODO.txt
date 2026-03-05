@@ -52,7 +52,7 @@ DONE cleanup depth first + pruning (remove globals, have a tree pruning tracker)
 DONE Cleanup lineup caching
 STARTED working with late players in beam schedule
 
-3/4/2025
+3/4/2025 1.5hrs
 DONE late players working with beam schedule
 DONE when a new player joins the fray, reset / re-baseline counts
 DONE some organization of the models and schedules into modules
