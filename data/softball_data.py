@@ -16,15 +16,15 @@ def get_default_players():
         Player("Dude", True, False, False, [_1B, _LF, _3B], [8, 10, 10]),
         Player("Guy", True, False, False, [_C, _RF, _RCF, _2B, _3B, _1B], [5, 5, 5, 3, 2, 3]),
         Player("Jackie", True, True, False, [_C, _LCF, _RCF], [6, 6, 6]),
-        # Player("Daniella", True, True, False, [_2B, _RCF, _RF], [6, 6, 6]),
-        # Player("Nick", True, False, False, [_SS, _1B, _RCF, _LCF, _3B], [7, 8, 7, 7, 7]),
-        # Player("Rob", True, False, False, [_2B, _1B, _RCF, _LCF, _3B], [3, 5, 6, 6, 7]),
-        # Player("Jacob", True, False, False, [_2B, _1B], [9, 6]),
-        # Player("Hubie", True, False, False, [_3B, _1B], [4, 6]),
-        # Player("Ruby", True, True, False, [_3B, _RF, _C, _2B], [6, 7, 7, 4]),
-        # Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
-        # Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
-        # Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Daniella", True, True, False, [_2B, _RCF, _RF], [6, 6, 6]),
+        Player("Nick", True, False, False, [_SS, _1B, _RCF, _LCF, _3B], [7, 8, 7, 7, 7]),
+        Player("Rob", True, False, False, [_2B, _1B, _RCF, _LCF, _3B], [3, 5, 6, 6, 7]),
+        Player("Jacob", True, False, False, [_2B, _1B], [9, 6]),
+        Player("Hubie", True, False, False, [_3B, _1B], [4, 6]),
+        Player("Ruby", True, True, False, [_3B, _RF, _C, _2B], [6, 7, 7, 4]),
+        Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
         # Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),
         # Player("Louis", True, True, False, [_SS, _2B, _1B], [7, 7, 7]),
         # Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
@@ -130,7 +130,7 @@ def players_to_df(players: List[Player]) -> pd.DataFrame:
 
 # Convert edited dicts back to Player list
 def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
-    players = []
+    players: List[Player] = []
 
     positions = ["P", "SS", "LF", "LCF", "3B", "2B", "1B", "RCF", "RF", "C"]
 
@@ -171,5 +171,24 @@ def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
 
         # Create and collect Player object
         players.append(Player(name, available, female, late, player_positions, strengths))
+
+    #
+    # Updating positions so that if a player can play one outfield position
+    # then they can play the equivalent position for a understaffed team.
+    #
+    lcf = get_position("LCF")
+    cf = get_position("CF")
+    rcf = get_position("RCF")
+    rf = get_position("RCF")
+
+    def update_player_positions(old, new):
+        if old in player.positions:
+            player.positions.add(new)
+            player.positions_stengths[new] = player.positions_stengths[old]
+
+    for player in players:
+        update_player_positions(lcf, cf)
+        update_player_positions(rcf, rf)
+
 
     return players

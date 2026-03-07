@@ -43,12 +43,13 @@ def sort_lineups(lineups: List[Lineup]):
 
 def get_all_lineups_by_score(
     available_players: List["Player"],
-    positions: List[Position],
     min_females: int):
 
     from itertools import combinations
     import numpy as np
     from scipy.optimize import linear_sum_assignment
+
+    positions = get_positions(len(available_players), allow_not_enough=True)
 
     num_positions = len(positions)
     num_players = len(available_players)
@@ -280,9 +281,8 @@ class BeamSchedule:
 
         # TODO get_all_lineups_by_score could take num players, females required, and list of players
         #      and it needs to be able to handle if not enough players are provided
-        positions = get_positions(config.players_required)
-        schedule.late_lineups = get_all_lineups_by_score(schedule.late_players + schedule.early_players, positions, config.females_required)
-        schedule.early_lineups = get_all_lineups_by_score(schedule.early_players, positions, config.females_required)
+        schedule.late_lineups = get_all_lineups_by_score(schedule.late_players + schedule.early_players, config.females_required)
+        schedule.early_lineups = get_all_lineups_by_score(schedule.early_players, config.females_required)
 
         schedule.best_score = 0
         schedule.paths = set()
@@ -362,16 +362,9 @@ class BeamSchedule:
         else:
             return self.early_lineups
         
-    # def _get_fairness(self, inning):
-    #     if self.config.inning_of_late_arrivals >= inning:
-    #         return self.fairness
-    #     else:
-    #         return max(self.fairness, 2*self.config.inning_of_late_arrivals - inning)
-
     def _score(self, node: LineupNode):
         return node.mean - node.sigma*self.sigma_weight
  
-    
     def _depth_first(self, node: LineupNode, results: List[Any], current_depth: int = 1):
         start = time.time()
 

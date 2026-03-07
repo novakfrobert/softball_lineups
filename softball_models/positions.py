@@ -44,17 +44,24 @@ def get_position(pos: str):
     
     return _POSITIONS[pos]
 
-def get_positions(num_players):
+def get_positions(num_players, allow_not_enough=False):
     positions = []
 
-    if num_players == 10:
-        positions = [_P, _SS, _LF, _LCF, _3B, _1B, _2B, _RCF, _RF, _C] # ordered by most important
+    if num_players >= 10:
+        positions = [_P, _SS, _LF, _LCF, _3B, _1B, _2B, _RCF, _RF, _C]
     elif num_players == 9:
-        positions = [_P, _SS, _LF, _CF, _3B, _1B, _2B, _RF, _C] # ordered by most important
-    elif num_players == 8:
-        positions = [_P, _SS, _LF, _CF, _3B, _1B, _2B, _RF] # ordered by most important
-    else:
+        positions = [_P, _SS, _LF, _CF, _3B, _1B, _2B, _RF, _C]
+    elif num_players <= 8:
+        positions = [_P, _SS, _LF, _CF, _3B, _1B, _2B, _RF]
+
+    # Ensure they are sorted by most important
+    positions.sort(key = lambda pos: -1*pos.weight)
+
+    if allow_not_enough:
+        # Get the n most important positions and return them
+        positions = positions[:num_players]
+    elif num_players < 8:
+        # Don't allow less than 8 players
         raise Exception(f"Invalid number of players {num_players}")
     
-    positions.sort(key = lambda pos: -1*pos.weight)
     return positions

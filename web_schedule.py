@@ -13,7 +13,7 @@ def render_schedule(schedule: Schedule):
 
         available_players: List[Player] = [p for p in schedule.players if p.available]
         available_players.sort(key=lambda p: p.innings_played)
-        avg_score = round(sum(inning.score for inning in schedule.innings) / len(schedule.innings), 2)
+        avg_score = round(sum(inning.strength for inning in schedule.innings) / len(schedule.innings), 2)
         st.subheader("Innings Played")
         st.markdown(f"<b>Avg Score:</b> <small>{avg_score}</small>", unsafe_allow_html=True)
         st.code('\n'.join([f"{p.innings_played} {p.name}" for p in available_players]), line_numbers=False)
@@ -22,8 +22,8 @@ def render_schedule(schedule: Schedule):
         st.subheader("📜 Lineups by Inning")
 
         for inning in schedule.innings:
-            st.header(f"Inning {inning.number}", divider=True)
-            playing = '\n'.join([f"{pos.name} {player.name}" for pos, player in inning.positions.items()])
+            st.header(f"Inning {inning.id}", divider=True)
+            playing = '\n'.join([f"{pos.name} {player.name}" for pos, player in inning.field.items()])
             sitting = '\n'.join([f"{name}" for name in inning.bench])
             late = '\n'.join([f"{player.name}" for player in inning.late])
 
@@ -41,7 +41,7 @@ def render_schedule(schedule: Schedule):
                 st.markdown("##### 🟡 Late:")
                 st.code(late, line_numbers=False)
             with col_stats:
-                st.markdown(f"<b>Score:</b> <small>{inning.score}</small>", unsafe_allow_html=True)
+                st.markdown(f"<b>Score:</b> <small>{inning.strength}</small>", unsafe_allow_html=True)
                 st.markdown(f"<b>Females:</b> <small>{inning.females_playing}</small>", unsafe_allow_html=True)
                 st.markdown(f"<b>Players:</b> <small>{inning.playing_count}</small>", unsafe_allow_html=True)
 
