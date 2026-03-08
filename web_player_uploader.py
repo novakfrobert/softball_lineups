@@ -1,6 +1,6 @@
 import streamlit as st
 from softball_models.player import Player
-from data.softball_data import load_players_from_csv
+from services.player_service import load_players_from_csv
 from streamlit_ext import DataTable, CsvUploader
 from typing import List
 

@@ -3,19 +3,23 @@
     - cleanup player id + hashing if needed
 
 
-- beam schedule less than 10 players
 - courtesy catcher for beam schedule
-- beam schedule not enough players provided
 
 - continued cleanup of beam schedule as needed
 
-- Create service module. softball service -> move functions out of models to keep them thin. Can also move data here as data service.
-
-- valid warnings when no fair lineups are found for beam schedule
+- make warnings useful for beam schedule
+- handle when no fair lineups are found for beam schedule
 - might be a bug right now updating page causes no lineups to be created on next schedule creation.  likely due to global variables/state.
 
-- plug algorithm into main page
-- allow user to choose fast or slow algorithm (performance or quality)
+- create test cases and run them through each scheduler
+    - normal cases
+    - late player cases
+    - unavailable cases
+    - not enough players cases
+    - not enough female cases
+    - no fair lineups cases
+
+- 
 - determine how to track progress for slow algorithm to show to user
 - describe algorithm and big O 
 - add comments to algorithm
@@ -56,3 +60,15 @@ STARTED working with late players in beam schedule
 DONE late players working with beam schedule
 DONE when a new player joins the fray, reset / re-baseline counts
 DONE some organization of the models and schedules into modules
+
+3/7/2025 3hours
+DONE beam working with not enough players
+DONE cleanup of greedy scheduler and beam scheduler 'inning' and 'lineup' models. Working more towards thin models.
+STARTED courtesy catcher working with beam scheduler
+
+3/8/2025 2Hours
+DONE plug algorithm into main page
+DONE beam schedule not enough players provided
+DONE factor out player count . innings_played... put it in greedy scheduler class
+DONE Create service module. softball service -> move functions out of models to keep them thin. Can also move data here as data service.
+DONE allow user to choose fast or slow algorithm (performance or quality)

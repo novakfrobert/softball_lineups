@@ -1,7 +1,7 @@
 import streamlit as st
 from softball_models.player import Player
 from softball_models.schedule import Schedule
-from softball_models.schedule_config import ScheduleConfig
+from softball_models.schedule_config import ScheduleConfig, SchedulerType
 from typing import List
 
 
@@ -15,6 +15,9 @@ def render_schedule_options(players: List[Player]) -> ScheduleConfig:
 
     number_players = len([p for p in players if p.available])
     number_females = len([p for p in players if p.female and p.available])
+
+    schedule_type = st.pills("Scheduler Type", ["Fast", "Quality"], default="Quality")
+    schedule_type = { "Fast": SchedulerType.GREEDY, "Quality": SchedulerType.BEAM }[schedule_type]
 
     number_innings = st.number_input("Number of Innings", min_value=1, max_value=9, value=6, key="num_innings")
     current_value = min(st.session_state.get("late_inning", 3), number_innings)
@@ -37,5 +40,6 @@ def render_schedule_options(players: List[Player]) -> ScheduleConfig:
     config.inning_of_late_arrivals = inning_of_late_arrivals
     config.females_required = minimum_females
     config.players_required = minimum_players
+    config.schedule_type = schedule_type
     return config
 

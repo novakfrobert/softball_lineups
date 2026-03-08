@@ -1,9 +1,13 @@
 from typing import Dict, List, Self
 
+from scheduler.play_counter import PlayCounter
 from softball_models.inning import Inning
 import statistics
 
+from softball_models.player import Player
 from utils.timing import add_time
+from utils.math import clamp
+
 
 import time
 import hashlib
@@ -15,14 +19,24 @@ class LineupNode:
     ssd: float   # Sum of squared deviation
     mean: float  
     cumulative_strength: float #strengths thus far
-    cumulative_counts: Dict[str, int] # key is player name
+    cumulative_counts: PlayCounter # key is player name
     prev: Self
     next: List[Self]
     depth: int
     hash: str
 
-    def __repr__(self):
-        return f"Depth:{self.depth}  Strength:{self.cumulative_strength}  Counts:{self.cumulative_counts},  Sigma{self.sigma}"
+    @staticmethod
+    def root(players: List[Player]):
+        root = LineupNode(None, None)
+        root.hash = 0
+        root.depth = 0
+        root.sigma = 0
+        root.ssd = 0
+        root.mean = 0
+        root.cumulative_strength = 0
+        root.cumulative_counts = PlayCounter(players)
+
+        return root
 
     def __init__(self, lineup: Inning, prev: Self):
         start = time.time()
@@ -33,13 +47,17 @@ class LineupNode:
         if prev:
             self.depth = prev.depth + 1
             self.sigma = self._compute_sigma()
-            self.cumulative_counts = self._increment_counts()
             self.cumulative_strength = prev.cumulative_strength + lineup.strength
             self.mean = self.cumulative_strength / self.depth
             self.ssd = (lineup.strength - self.mean)*(lineup.strength - prev.mean) + prev.ssd
             self.hash = self._hash()
+            self.cumulative_counts = prev.cumulative_counts.copy()
+            self.cumulative_counts.increment_many(lineup.field.values())
 
         add_time("lineup node ctor", start)
+
+    def __repr__(self):
+        return f"Depth:{self.depth}  Strength:{self.cumulative_strength}  Counts:{self.cumulative_counts.counter},  Sigma{self.sigma}"
 
     def _hash(self):
         start = time.time()
@@ -55,13 +73,6 @@ class LineupNode:
         add_time("lineup node hash", start)
         return hash
 
-    def _increment_counts(self):
-        counts = self.prev.cumulative_counts.copy()
-        for player in self.lineup.field.values():
-            if player.id not in counts:
-                counts[player.id] = 0
-            counts[player.id] += 1
-        return counts
 
     def _compute_sigma(self):
         node: LineupNode = self.prev
@@ -70,12 +81,6 @@ class LineupNode:
             strengths.append(node.lineup.strength)
             node = node.prev
         return statistics.pstdev(strengths)
-    
-    def rebase_counts(self):
-        minimum_value = min(self.cumulative_counts.values())
-        for key in self.cumulative_counts.keys():
-            self.cumulative_counts[key] -= minimum_value
-
     
     def projected_ideal_mean(self, min_lineup: float, max_lineup: float, sigma_weight: float):
         start = time.time()
@@ -149,5 +154,3 @@ class LineupNode:
 
         return res
 
-def clamp(value, min_val, max_val):
-    return max(min_val, min(value, max_val))

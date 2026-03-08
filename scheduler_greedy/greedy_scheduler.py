@@ -1,24 +1,23 @@
-from collections import defaultdict
 import random
 from typing import List
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-from data.softball_data import sort_players
+from scheduler.play_counter import PlayCounter
 from softball_models.inning import Inning
 from softball_models.player import Player
-from softball_models.positions import Position, get_positions
-
 from softball_models.schedule import Schedule
 from softball_models.schedule_config import ScheduleConfig
 
+from services.position_service import Position, get_positions
 
 class GreedyScheduler: 
 
     def __init__(self, players: List[Player], config: ScheduleConfig):
         self.players: List[Player] = players
         self.config: ScheduleConfig = config
+        self.counter = PlayCounter(players)
 
     @staticmethod
     def create(players: List[Player], config: ScheduleConfig):
@@ -81,21 +80,14 @@ class GreedyScheduler:
         inning.bench.pop(player.name)
         inning.field[position] = player
         inning.playing_count += 1
-        player.innings_played += 1
+        inning.playing_ids.add(player.id)
+        self.counter.increment(player)
         if player.female:
             inning.females_playing += 1
 
-    def get_least_played_players(self, inning: Inning):
-        players_by_play_count = defaultdict(list)
-        for player in inning.bench.values():
-            players_by_play_count[player.innings_played].append(player)
-        fewest = min(players_by_play_count.keys())
-
-        return players_by_play_count[fewest]
-    
     def try_finding_any_player(self, inning: Inning, position: Position):
         if not inning.bench: return False
-        bench = self.get_least_played_players(inning)
+        bench = self.counter.least_played(inning.bench.values())
         random.shuffle(bench)
         self.move_to_field(inning, bench[0], position)
         return True
@@ -103,17 +95,17 @@ class GreedyScheduler:
     def try_finding_optimal_player(self, inning: Inning, position: Position):
         bench = [p for p in inning.bench.values() if position in p.positions]
         if not bench: return False
-        sort_players(position, bench)
+        self.sort_players(position, bench)
         self.move_to_field(inning, bench[0], position)
         return True
     
     def try_finding_female_player(self, inning: Inning, position: Position):
         # try getting female at this position
         bench = [p for p in inning.bench.values() if position in p.positions and p.female]
-        sort_players(position, bench)
+        self.sort_players(position, bench)
         if not bench: 
             # try getting any female
-            bench = [p for p in self.bench.values() if p.female]
+            bench = [p for p in inning.bench.values() if p.female]
             random.shuffle(bench)
         if not bench:
             return False
@@ -124,6 +116,9 @@ class GreedyScheduler:
         slots_remaining = self.config.players_required - inning.playing_count
         females_remaining = self.config.females_required - inning.females_playing
         return slots_remaining == females_remaining
+    
+    def sort_players(self, position: str, players: List[Player]):
+        players.sort(key=lambda p: (self.counter.get_count(p), -1*p.positions_stengths[position]))
     
     def optimize_lineup(self, inning: Inning, positions: List[Position]):
         n = len(inning.field)

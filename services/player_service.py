@@ -3,7 +3,7 @@ import csv
 import numpy as np
 import pandas as pd
 from softball_models.player import Player
-from softball_models.positions import _1B, _2B, _3B, _C, _LCF, _LF, _P, _RCF, _RF, _SS, get_position
+from services.position_service import _1B, _2B, _3B, _C, _LCF, _LF, _P, _RCF, _RF, _SS, get_position
 from typing import List
 
 def get_default_players():
@@ -30,11 +30,8 @@ def get_default_players():
         # Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
     ]
 
-def sort_players(position: str, players: List[Player]):
-    players.sort(key=lambda p: (p.innings_played, -1*p.positions_stengths[position]))
 
-
-def load_players_from_csv(csv_file: str):
+def load_players_from_csv(csv_file: str) -> List[Player]:
 
     players = []
     reader = csv.reader(csv_file.read().decode("utf-8-sig").splitlines())
@@ -97,9 +94,6 @@ def players_to_df(players: List[Player]) -> pd.DataFrame:
         }
         for pos in positions:
             ppos = get_position(pos)
-            for k,v in p.positions_stengths.items():
-                if k.name == pos:
-                    print(k, hash(k), hash(ppos), k == ppos, k.name == ppos.name, k.weight == ppos.weight)
             row[pos] = p.positions_stengths.get(ppos, float("NaN"))
         data.append(row)
 
@@ -129,7 +123,7 @@ def players_to_df(players: List[Player]) -> pd.DataFrame:
     return df
 
 # Convert edited dicts back to Player list
-def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
+def dataframe_to_players(df: pd.DataFrame) -> List[Player]:
     players: List[Player] = []
 
     positions = ["P", "SS", "LF", "LCF", "3B", "2B", "1B", "RCF", "RF", "C"]

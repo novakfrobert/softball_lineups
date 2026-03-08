@@ -1,7 +1,8 @@
 import streamlit as st
 from softball_models.player import Player
 from softball_models.schedule import Schedule
-from typing import List
+from services.schedule_service import get_players_ordered_by_playcount
+from typing import List, Tuple
 
 
 def render_schedule(schedule: Schedule):
@@ -11,18 +12,18 @@ def render_schedule(schedule: Schedule):
         for warning in schedule.warnings:
             st.write(f"⚠️{warning}")
 
-        available_players: List[Player] = [p for p in schedule.players if p.available]
-        available_players.sort(key=lambda p: p.innings_played)
         avg_score = round(sum(inning.strength for inning in schedule.innings) / len(schedule.innings), 2)
         st.subheader("Innings Played")
         st.markdown(f"<b>Avg Score:</b> <small>{avg_score}</small>", unsafe_allow_html=True)
-        st.code('\n'.join([f"{p.innings_played} {p.name}" for p in available_players]), line_numbers=False)
+
+        player_innings_played: List[Tuple[Player, int]] = get_players_ordered_by_playcount(schedule)
+        st.code('\n'.join([f"{count} {player.name}" for player, count in player_innings_played]), line_numbers=False)
 
     with col_lineup:
         st.subheader("📜 Lineups by Inning")
 
-        for inning in schedule.innings:
-            st.header(f"Inning {inning.id}", divider=True)
+        for number, inning in enumerate(schedule.innings, 1):
+            st.header(f"Inning {number}", divider=True)
             playing = '\n'.join([f"{pos.name} {player.name}" for pos, player in inning.field.items()])
             sitting = '\n'.join([f"{name}" for name in inning.bench])
             late = '\n'.join([f"{player.name}" for player in inning.late])

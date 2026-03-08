@@ -1,13 +1,15 @@
 import sys
 import traceback
 import streamlit as st
-from scheduler_beam.beam_schedule import BeamScheduler
-from data.softball_data import load_players_from_csv, players_to_df, dataframe_to_players, get_default_players
+from typing import List
+
 from softball_models.player import Player
 from softball_models.schedule import Schedule
 from softball_models.schedule_config import ScheduleConfig
-from scheduler_greedy import GreedyScheduler
-from typing import List
+
+from scheduler.schedule_factory import ScheduleFactory
+from services.player_service import get_default_players
+
 from web_schedule_options import render_schedule_options
 from web_players import render_players
 from web_schedule import render_schedule
@@ -41,21 +43,21 @@ def render_home():
             schedule_config: ScheduleConfig = render_schedule_options(players)
 
         with col_main:
-            schedule: Schedule = GreedyScheduler.create(players, schedule_config)
-
-            # players = players
-            # for p in players:
-                # p.innings_played = 0
-
-            fairness_index = 2
-            sigma_weight = 2
+            # TODO, work into schedule config
+            # fairness_index = 2
+            # sigma_weight = 2
             try:
-                BeamScheduler.create(sigma_weight, fairness_index, players, schedule_config)
+                # pass
+                schedule = ScheduleFactory.create(players, schedule_config)
+                render_schedule(schedule)
+
             except Exception as e:
                 print("Beam schedule failed:", e)
                 print(traceback.print_exc(file=sys.stdout) )
                 print("continuing from failed beam schedule...")
 
-            render_schedule(schedule)
+                st.write("Failed to create schedule.")
+
+
 
     print("Finish")

@@ -3,19 +3,30 @@ from softball_models.player import Player
 from softball_models.positions import Position
 
 class Inning:
-    def __init__(self, bench: List[Player], late: List[Player]):
-        self.bench: Dict[str, Player] = {p.name: p for p in bench}
-        self.late: List[Player] = late
-        self.field: Dict[Position, Player] = {}
-        self.females_playing: int = 0
-        self.playing_count: int = 0
-        self.strength: float = 0
+    number: int
+
+    bench: Dict[str, Player] # key is name
+    positions: Dict[Position, Player]
+
+    late: List[Player] # key is name
+
+    females_playing: int
+    playing_count: int
+
+    def __init__(self, n: int, bench: List[Player], late: List[Player]):
+        self.number = n
+        self.bench = {p.name: p for p in bench}
+        self.late = late
+        self.positions = {}
+        self.females_playing = 0
+        self.playing_count = 0
+        self.score = 0
 
     def __str__(self):
         res = f"{self.number}\n"
 
         res += f"\tPlaying:\n"
-        for k,v in self.field.items():
+        for k,v in self.positions.items():
             res += f"\t\t{k} {v.name}\n"
 
         res += f"\tSitting:\n"

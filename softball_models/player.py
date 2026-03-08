@@ -24,7 +24,6 @@ class Player:
         self.name = name
         self.available = available
         self.late = late
-        self.innings_played = 0 # start at 0 for now
         self.female = female
 
         self.positions = set(positions)
@@ -32,15 +31,8 @@ class Player:
         for i in range(len(positions)):
             self.positions_stengths[positions[i]] = strengths[i]
 
-    def try_update_positions(self, from_pos, to_pos):
-        if from_pos in self.positions:
-            self.positions.remove(from_pos)
-            str = self.positions_stengths.pop(from_pos)
-            self.positions.add(to_pos)
-            self.positions_stengths[to_pos] = str
-
     def __repr__(self):
-        return f"{self.name} [{self.id}] ({self.innings_played})- Female: {self.female};  Available: {self.available};  Late: {self.late};  Positions: {self.positions_stengths}\n"
+        return f"{self.name} [{self.id}] - Female: {self.female};  Available: {self.available};  Late: {self.late};  Positions: {self.positions_stengths}\n"
     
     def __eq__(self, other):
         if not isinstance(other, Player):
