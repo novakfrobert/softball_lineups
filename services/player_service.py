@@ -25,9 +25,9 @@ def get_default_players():
         Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
         Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
         Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
-        # Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),
-        # Player("Louis", True, True, False, [_SS, _2B, _1B], [7, 7, 7]),
-        # Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
+        Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),
+        Player("Louis", True, True, False, [_SS, _2B, _1B], [7, 7, 7]),
+        Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
     ]
 
 
@@ -186,3 +186,10 @@ def dataframe_to_players(df: pd.DataFrame) -> List[Player]:
 
 
     return players
+
+     
+def get_late_players(players: List[Player]):
+    return [p for p in players if p.available and p.late]
+
+def get_early_players(players: List[Player]):
+    return [p for p in players if p.available and not p.late]

@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import statistics
 
 """
 # As an example
@@ -60,7 +61,7 @@ def compute_result(max_innings, scores_so_far, value_for_remaining, sigma_weight
     return total - sigma * sigma_weight
 
 
-def plot_results(max_innings, scores_so_far, value_min, value_max, sigma_weight, num_points=200):
+def plot_results(max_innings, scores_so_far, value_min, value_max, sigma_weight, num_points=2000):
     """
     Plots the result of compute_result() across a range of possible
     values for remaining innings.
@@ -71,6 +72,12 @@ def plot_results(max_innings, scores_so_far, value_min, value_max, sigma_weight,
     # Compute results
     results = [compute_result(max_innings, scores_so_far, v, sigma_weight) for v in value_range]
 
+    for i, r in enumerate(results):
+
+        if r > 75.79:
+            print(value_range[i])
+            break
+
     # Plot
     plt.figure(figsize=(8, 5))
     plt.plot(value_range, results)
@@ -79,16 +86,49 @@ def plot_results(max_innings, scores_so_far, value_min, value_max, sigma_weight,
     plt.title("Result vs Remaining Inning Value")
     plt.grid(True)
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 
+def score(scores_so_far, ideal_mean, max_innings, weight):
+    scores = scores_so_far + [ideal_mean]*(max_innings-len(scores_so_far))
+
+    mean = statistics.mean(scores)
+    stdev = statistics.stdev(scores)
+
+    print(f"ideal: {ideal_mean}   mean: {mean}  stddev: {stdev}")
+
+    return mean - weight*stdev
+
+def calc_ideal_mean(scores_so_far, sigma_weight, max_linup):
+    return (max_linup + statistics.mean(scores_so_far) * sigma_weight)  / (1 + sigma_weight)
+
+
+"""
+strenghts [np.float64(86.8), np.float64(78.8), np.float64(84.9)]
+         best_score 75.79159992433397    equation res 78.12458186269247    value used 80.78159992433652   upper bound: 88.2   lower bound:  75.79159992433397
+            """
 # -----------------------------
 # Example usage:
 # -----------------------------
 if __name__ == "__main__":
     max_innings = 6
-    scores_so_far = [70, 73, 80]  # Example known inning scores
-    plot_results(max_innings, scores_so_far, value_min=50, value_max=200, sigma_weight=10.0)
+    sigma_weight = 2
+    scores_so_far = [86.8, 78.8, 84.9]  # Example known inning scores
+    print("mean", sum(scores_so_far)/len(scores_so_far))
+    # ideal_mean = calc_ideal_mean(scores_so_far, sigma_weight, 80)
+    # print("ideal mean", ideal_mean)
+    print("\tscore:",score(scores_so_far, 78.1245, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 80.7815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 80.2815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 79.7815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 82.7815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 81.7815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 83.7815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 84.7815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 85.7815, 6, sigma_weight))
+    print("\tscore:",score(scores_so_far, 86.7815, 6, sigma_weight))
+
+    plot_results(max_innings, scores_so_far, value_min=50, value_max=200, sigma_weight=sigma_weight)
 
 
 """

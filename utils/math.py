@@ -21,6 +21,8 @@ def get_percentile_item(lst, percentile: float):
     percentile = max(0.0, min(1.0, percentile))  # Clamp between 0 and 1
 
     index = int(percentile * (len(lst) - 1))
+    # print("percentile, index")
+    # print(percentile, index)
 
     return lst[index]
 

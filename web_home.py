@@ -10,6 +10,7 @@ from softball_models.schedule_config import ScheduleConfig
 from scheduler.schedule_factory import ScheduleFactory
 from services.player_service import get_default_players
 
+from utils.timing import reset_times
 from web_schedule_options import render_schedule_options
 from web_players import render_players
 from web_schedule import render_schedule
@@ -20,6 +21,7 @@ def render_home():
     print()
     print()
     print("New Render")
+    reset_times()
 
     if "players" not in st.session_state:
         st.session_state.players = get_default_players()

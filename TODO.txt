@@ -7,6 +7,8 @@
 
 - continued cleanup of beam schedule as needed
 
+- connect beam schedule sitting + late columns to UI
+
 - make warnings useful for beam schedule
 - handle when no fair lineups are found for beam schedule
 - might be a bug right now updating page causes no lineups to be created on next schedule creation.  likely due to global variables/state.
@@ -30,8 +32,6 @@
 - define web component cleanup better
 - clean up web components, make similar 
 - add comments to components
-
-- can the player/schedule/inning definitions be cleaned up based on the 2 schedule apis?
 
 - add tests that give expected answer with certain groups of players
 
