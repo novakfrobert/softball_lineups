@@ -22,9 +22,10 @@ def get_all_possible_innings(available_players: List[Player], min_females: int):
 
     max_score = sum(10 * pos.weight for pos in positions)
 
+    count = 0
     # Try only valid player subsets of correct size and enough females
     for subset in combinations(available_players, r=num_positions):
-
+        count += 1
         if sum(p.female for p in subset) < min_females:
             continue
 
@@ -55,14 +56,18 @@ def get_all_possible_innings(available_players: List[Player], min_females: int):
             position = positions[j]
             inning.playing_ids.add(player.id)
             inning.field[position] = player
-            # TODO add playing count, add female count
-            #      not sure what to do about late 
 
         for p in available_players:
             if p.id not in inning.playing_ids:
-                inning.bench[p.id] = p
+                inning.bench[p.name] = p
+            else:
+                inning.playing_count += 1
+            
+                if p.female:
+                    inning.females_playing += 1
 
         lineups.append(inning)
 
     lineups.sort(key = lambda l: -1*l.strength)
+    print("Total combinations", count)
     return lineups

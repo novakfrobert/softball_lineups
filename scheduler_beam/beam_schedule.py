@@ -67,7 +67,9 @@ class BeamScheduler:
         root = LineupNode.root(self.all_players)
       
         print("creating tree....")
-        print("number lineups", len(self.late_lineups))
+        print("number lineups late", len(self.late_lineups))
+        print("number lineups early", len(self.early_lineups))
+        print("Num players", len(self.all_players))
 
         leaf_nodes: List[LineupNode] = []
         self._depth_first(root, leaf_nodes)
@@ -155,25 +157,17 @@ class BeamScheduler:
         
         minimum_viable_score = 0
         if current_depth > 1 and self.best_score != 0:
-            pass
-            # ideal_mean = node.projected_ideal_mean(lineups[-1].strength, lineups[0].strength, self.sigma_weight)
-            # minimum_viable_score = node.minimum_viable_score(self.config.number_innings, current_depth, ideal_mean, self.best_score)
             minimum_viable_score = self._minimum_viable_score(node, current_depth)
 
-        # print("best score", self.best_score, "current_score", node.lineup.strength, "lineups:", lineups[-1].strength, lineups[0].strength, "  minimum:", minimum_viable_score, "  depths:", max_depth, current_depth)
-
+        # print("Calling fair lineups, depth", current_depth)
         fair_lineups = self._get_fair_lineups(node, lineups, minimum_viable_score)
 
         if not fair_lineups:
             # print("No fair lineups")
             return
         
-
-        num_lineups = len(fair_lineups)
-        # print(num_lineups)
-        # percentiles = [0, 7/num_lineups, 59/num_lineups, 17/num_lineups, 31/num_lineups] 
-        # percentiles = [0, 1/num_lineups, 2/num_lineups, 3/num_lineups, 5/num_lineups, 11/num_lineups] 
-        percentiles = [0, 0.05, 0.03, 0.01, 0.3, 0.5, 0.7]
+        # TODO store in variable in class, take as param
+        percentiles = [0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8]
         
         for percentile in percentiles:
             try:
@@ -243,7 +237,7 @@ class BeamScheduler:
             if fair:
                 fair_lineups.append(lineup)
 
-        # print("Fair lineups found", len(fair_lineups), print(node.cumulative_counts))
+        # print("Fair lineups found", len(fair_lineups), node.cumulative_counts.counter)
 
         add_time("get_fair_lineups", start)
 
