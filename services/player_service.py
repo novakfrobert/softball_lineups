@@ -22,7 +22,7 @@ def get_default_players():
         Player("Jacob", True, False, False, [_2B, _1B], [9, 6]),
         Player("Hubie", True, False, False, [_3B, _1B], [4, 6]),
         Player("Ruby", True, True, False, [_3B, _RF, _C, _2B], [6, 7, 7, 4]),
-        Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        # Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
         # Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
         # Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
         # Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),

@@ -12,9 +12,6 @@ import hashlib
 
 class LineupNode:
     lineup: Inning | None # This is None for root node
-    sigma: float # Standard deviation
-    ssd: float   # Sum of squared deviation
-    mean: float  
     cumulative_strength: float #strengths thus far
     cumulative_counts: PlayCounter # key is player name
     prev: Self
@@ -27,9 +24,6 @@ class LineupNode:
         root = LineupNode(None, None)
         root.hash = 0
         root.depth = 0
-        root.sigma = 0
-        root.ssd = 0
-        root.mean = 0
         root.cumulative_strength = 0
         root.cumulative_counts = PlayCounter(players)
 
@@ -43,15 +37,20 @@ class LineupNode:
 
         if prev:
             self.depth = prev.depth + 1
-            self.sigma = self._compute_sigma()
-            self.cumulative_strength = prev.cumulative_strength + lineup.strength
-            self.mean = self.cumulative_strength / self.depth
-            self.ssd = (lineup.strength - self.mean)*(lineup.strength - prev.mean) + prev.ssd
             self.hash = self._hash()
             self.cumulative_counts = prev.cumulative_counts.copy()
             self.cumulative_counts.increment_many(lineup.field.values())
 
         add_time("lineup node ctor", start)
+    
+    def get_stregnths(self):
+        strengths = [self.lineup.strength]
+        prev = self.prev
+        while prev and prev.lineup:
+            strengths.append(prev.lineup.strength)
+            prev = prev.prev
+
+        return strengths
 
     def _hash(self):
         start = time.time()
@@ -67,15 +66,14 @@ class LineupNode:
         add_time("lineup node hash", start)
         return hash
 
-
-    def _compute_sigma(self):
-        node: LineupNode = self.prev
-        strengths = [self.lineup.strength]
-        while node and node.lineup:
-            strengths.append(node.lineup.strength)
-            node = node.prev
-        return statistics.pstdev(strengths)
-    
     def __repr__(self):
         return f"Depth:{self.depth}  Strength:{self.cumulative_strength}  Counts:{self.cumulative_counts.counter},  Sigma{self.sigma}"
+    
+    def __eq__(self, other):
+        if not isinstance(other, Player):
+            return NotImplemented
+        return self.hash == other.hash
+
+    def __hash__(self):
+        return hash(self.hash)
     

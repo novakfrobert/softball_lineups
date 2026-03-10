@@ -9,6 +9,8 @@
 
 - connect beam schedule sitting + late columns to UI
 
+- incorporate scoring with fairness index + fairness weight.  Fray lineup w/o metro and samantha late does not work with fair index = 1 ATM.
+
 - make warnings useful for beam schedule
 - handle when no fair lineups are found for beam schedule
 - might be a bug right now updating page causes no lineups to be created on next schedule creation.  likely due to global variables/state.

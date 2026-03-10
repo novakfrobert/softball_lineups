@@ -19,7 +19,7 @@ class ScheduleFactory:
             return GreedyScheduler.create(players, schedule_config)
 
         def create_beam():
-            return BeamScheduler.create(2, 1, players, schedule_config)
+            return BeamScheduler.create(players, schedule_config)
 
         dispatcher = {
             SchedulerType.GREEDY: create_greedy,

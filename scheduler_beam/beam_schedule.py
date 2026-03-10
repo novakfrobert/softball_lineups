@@ -1,4 +1,4 @@
-from scipy.optimize import minimize_scalar
+from functools import cache
 import statistics
 import traceback
 from typing import Any, List, Set
@@ -18,12 +18,6 @@ from utils.timing import add_time, print_times
 import time
 import math
 
-def frange(start, stop, step):
-    x = start
-    while x < stop:
-        yield x
-        x += step
-
 
 ########################################
 # Schedule - Our tree of possible linups
@@ -31,11 +25,11 @@ def frange(start, stop, step):
     
 class BeamScheduler:
 
-    def __init__(self, sigma_weight: float, fairness_index: int, players: List[Player], config: ScheduleConfig):
+    def __init__(self, players: List[Player], config: ScheduleConfig):
         self.config: ScheduleConfig = config
         self.players: List[Player] = players
-        self.fairness: int = fairness_index
-        self.sigma_weight: float = sigma_weight
+        self.fairness: int = config.fair_factor
+        self.sigma_weight: float = config.sigma_weight
 
         self.late_players: List[Player] = get_late_players(players)
         self.early_players: List[Player] = get_early_players(players)
@@ -52,11 +46,11 @@ class BeamScheduler:
 
 
     @staticmethod
-    def create(sigma_weight: float, fairness_index: int, players: List[Player], config: ScheduleConfig):
+    def create(players: List[Player], config: ScheduleConfig):
 
         start = time.time()
 
-        scheduler = BeamScheduler(sigma_weight, fairness_index, players, config)
+        scheduler = BeamScheduler(players, config)
         return scheduler.schedule()
 
     def schedule(self):
@@ -64,7 +58,7 @@ class BeamScheduler:
         start = time.time()
         print("create", self.players)
 
-        root = LineupNode.root(self.all_players)
+        root = LineupNode.root(self.early_players)
       
         print("creating tree....")
         print("number lineups late", len(self.late_lineups))
@@ -87,20 +81,18 @@ class BeamScheduler:
         schedule.config = self.config
         schedule.positions = get_positions(len(self.all_players), allow_not_enough=True)
 
-
         #
         # Get the top lineup
         # This should be a strong lineup that has low standard deviation
         #
         node = leaf_nodes[0]
         print("final score", self._score(node))
-        print(node.cumulative_strength/6)
+        # print(node.cumulative_strength/6)
 
         end_node = node
-        print(end_node.cumulative_strength/self.config.number_innings)
-        print(end_node.sigma)
+        # print(end_node.cumulative_strength/self.config.number_innings)
+        # print(end_node.sigma)
 
-        print(node.sigma)
         i = self.config.number_innings
         while node and node.lineup:
             # print()
@@ -108,6 +100,7 @@ class BeamScheduler:
             # print(node.lineup.strength)
             # print(node.lineup.field)
 
+            # TODO clean this up, could do a node_to_schedule function
             schedule.innings.append(node.lineup)
 
             if i < self.config.inning_of_late_arrivals:
@@ -121,7 +114,10 @@ class BeamScheduler:
         end = time.time()
         print("Beam Schedule took: ", end - start, " seconds.")
         print_times()
-
+        print("fair lineups", self._get_fair_lineups.cache_info())
+        print("min viable", self._minimum_viable_score.cache_info())
+        print(self._minimum_viable_score.cache_clear())
+        print(self._get_fair_lineups.cache_clear())
         return schedule
     
     def _get_lineups(self, inning):
@@ -145,8 +141,6 @@ class BeamScheduler:
     def _depth_first(self, node: LineupNode, results: List[Any], current_depth: int = 1):
         start = time.time()
 
-        lineups = self._get_lineups(current_depth)
-
         if current_depth > self.config.number_innings:
             # we have a leaf node
             results.append(node)
@@ -157,25 +151,28 @@ class BeamScheduler:
         
         minimum_viable_score = 0
         if current_depth > 1 and self.best_score != 0:
-            minimum_viable_score = self._minimum_viable_score(node, current_depth)
+            minimum_viable_score = self._minimum_viable_score(frozenset(node.get_stregnths()), current_depth)
 
-        # print("Calling fair lineups, depth", current_depth)
-        fair_lineups = self._get_fair_lineups(node, lineups, minimum_viable_score)
+        # print()
+        # print(f"======== Calling fair lineups, depth {current_depth} ========")
+        fair_lineups = self._get_fair_lineups(frozenset(node.cumulative_counts.counter.items()), current_depth, int(minimum_viable_score))
 
         if not fair_lineups:
-            # print("No fair lineups")
+            # print("No fair lineups", "depth", current_depth)
             return
         
         # TODO store in variable in class, take as param
-        percentiles = [0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.8]
+        percentiles = [0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.7, 1]
+        # percentiles = [0]
         
         for percentile in percentiles:
             try:
+                if current_depth == self.config.inning_of_late_arrivals:
+                    node.cumulative_counts.rebase()
+                    node.cumulative_counts.add_players(self.late_players)
+
                 lineup = get_percentile_item(fair_lineups, percentile)
                 next = LineupNode(lineup, node)
-
-                if current_depth == self.config.inning_of_late_arrivals:
-                    next.cumulative_counts.rebase()
 
                 if next.hash not in self.paths:
                     self._depth_first(next, results, current_depth+1)
@@ -192,11 +189,14 @@ class BeamScheduler:
 
         add_time("depth_first", start)
 
-    def _get_fair_lineups(self, node: LineupNode, lineups: List[Inning], minimum: float = 0.0):
+    @cache
+    def _get_fair_lineups(self, counts: frozenset, current_depth: int, minimum: int = 0):
         start = time.time()
         fair_lineups = []
 
-        counts_items = list(node.cumulative_counts.counter.items())
+        lineups = self._get_lineups(current_depth)
+
+        counts_items = list(counts)
         first_key, first_val = counts_items[0]
         rest_items = counts_items[1:]
 
@@ -243,9 +243,10 @@ class BeamScheduler:
 
         return fair_lineups
     
-    def _minimum_viable_score(self, node: LineupNode, current_depth):
+    @cache
+    def _minimum_viable_score(self, strengths: frozenset, current_depth):
   
-        start = time.time()
+        start_time = time.time()
 
         goal = self.best_score
         lower_bound = self.min_lineup.strength
@@ -254,26 +255,44 @@ class BeamScheduler:
 
         remaining = max_depth - current_depth
 
-        strengths = [node.lineup.strength]
-        prev = node.prev
-        while prev and prev.lineup:
-            strengths.append(prev.lineup.strength)
-            prev = prev.prev
+        strengths = list(strengths)
+        mean = statistics.mean(strengths)
+        maximize_strengths: List[float] = strengths + [upper_bound]*(remaining-1)
+        minimize_stddev: List[float] = strengths + [mean]*(remaining - 1)
 
+        sum_strength = sum(maximize_strengths)
+        sum_std = sum(minimize_stddev)
+        sum_std2 = sum(x*x for x in minimize_stddev)
 
-        for ideal_value in frange(lower_bound, upper_bound, 0.5):
-            new_strengths: List[float] = strengths + [ideal_value]*remaining
+        n_strength = len(maximize_strengths)
+        n_std = len(minimize_stddev)
 
-            mean = statistics.mean(new_strengths)
-            stddev = statistics.pstdev(new_strengths)
+        weight = self.sigma_weight
 
-            score = mean - stddev*self.sigma_weight
+        start = int(lower_bound * 2)
+        end = int(upper_bound * 2)
 
-            if score > goal: 
-                return ideal_value
+        ideal = upper_bound + 1
 
-        add_time("minimum_viable_score", start)
-        return float('inf')
+        for i in range(start, end + 1):
+            v = i * 0.5
+
+            mean = (sum_strength + v) / (n_strength + 1)
+
+            new_sum = sum_std + v
+            new_sum2 = sum_std2 + v*v
+            n = n_std + 1
+            inv_n = 1/n
+
+            variance = new_sum2*inv_n - (new_sum*inv_n)**2
+            stddev = math.sqrt(variance)
+
+            if mean - stddev*weight > goal:
+                ideal = v
+                break
+
+        add_time("minimum_viable_score", start_time)
+        return ideal
 
             
 

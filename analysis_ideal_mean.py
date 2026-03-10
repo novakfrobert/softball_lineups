@@ -86,14 +86,26 @@ def plot_results(max_innings, scores_so_far, value_min, value_max, sigma_weight,
     plt.title("Result vs Remaining Inning Value")
     plt.grid(True)
     plt.tight_layout()
-    # plt.show()
+    plt.show()
 
+
+
+def score_with_max(scores_so_far, ideal_mean, max_innings, weight, max_score):
+    scores_for_strength = scores_so_far + [max_score]*(max_innings-len(scores_so_far)-1) + [ideal_mean]
+    scores_for_stddev = scores_so_far + [statistics.mean(scores_so_far)]*(max_innings-len(scores_so_far)-1) + [ideal_mean]
+
+    mean = statistics.mean(scores_for_strength)
+    stdev = statistics.pstdev(scores_for_stddev)
+
+    print(f"ideal: {ideal_mean}   mean: {mean}  stddev: {stdev}")
+
+    return mean - weight*stdev
 
 def score(scores_so_far, ideal_mean, max_innings, weight):
     scores = scores_so_far + [ideal_mean]*(max_innings-len(scores_so_far))
 
     mean = statistics.mean(scores)
-    stdev = statistics.stdev(scores)
+    stdev = statistics.pstdev(scores)
 
     print(f"ideal: {ideal_mean}   mean: {mean}  stddev: {stdev}")
 
@@ -101,6 +113,13 @@ def score(scores_so_far, ideal_mean, max_innings, weight):
 
 def calc_ideal_mean(scores_so_far, sigma_weight, max_linup):
     return (max_linup + statistics.mean(scores_so_far) * sigma_weight)  / (1 + sigma_weight)
+
+
+def frange(start, stop, step):
+    x = start
+    while x < stop:
+        yield x
+        x += step
 
 
 """
@@ -117,16 +136,20 @@ if __name__ == "__main__":
     print("mean", sum(scores_so_far)/len(scores_so_far))
     # ideal_mean = calc_ideal_mean(scores_so_far, sigma_weight, 80)
     # print("ideal mean", ideal_mean)
-    print("\tscore:",score(scores_so_far, 78.1245, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 80.7815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 80.2815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 79.7815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 82.7815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 81.7815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 83.7815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 84.7815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 85.7815, 6, sigma_weight))
-    print("\tscore:",score(scores_so_far, 86.7815, 6, sigma_weight))
+    for i in frange(60.7815, 88.7815, 0.2):
+        # print("\tscore:",score(scores_so_far, i, 6, sigma_weight))
+        print("\tscore:",score_with_max(scores_so_far, i, 6, sigma_weight, 88))
+        
+    # print("\tscore:",score(scores_so_far, 78.1245, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 80.7815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 80.2815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 79.7815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 82.7815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 81.7815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 83.7815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 84.7815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 85.7815, 6, sigma_weight))
+    # print("\tscore:",score(scores_so_far, 88.7815, 6, sigma_weight))
 
     plot_results(max_innings, scores_so_far, value_min=50, value_max=200, sigma_weight=sigma_weight)
 
