@@ -18,7 +18,6 @@ class Player:
     def __init__(self, name, available, female, late, positions, strengths, id=None):
         
         assert len(positions) == len(strengths), f"{name} has mismatched number of positions and strengths"
-        # assert len(positions) > 0, f"{name} cannot play 0 positions"
 
         if id is None:
             self.id = next(_counter)
