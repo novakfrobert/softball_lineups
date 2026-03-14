@@ -1,17 +1,23 @@
 
 
+from functools import cache
 from typing import List
 
 from services.position_service import get_positions
 from softball_models.inning import Inning
 from softball_models.player import Player
 
-
 def get_all_possible_innings(available_players: List[Player], min_females: int):
+    return _get_all_possible_innings(frozenset(available_players), min_females)
+
+@cache
+def _get_all_possible_innings(available_players: frozenset, min_females: int):
 
     from itertools import combinations
     import numpy as np
     from scipy.optimize import linear_sum_assignment
+
+    available_players = list(available_players)
 
     positions = get_positions(len(available_players), allow_not_enough=True)
 

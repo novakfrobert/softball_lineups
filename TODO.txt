@@ -7,11 +7,8 @@
 
 - continued cleanup of beam schedule as needed
 
-- connect beam schedule sitting + late columns to UI
 
-- incorporate scoring with fairness index + fairness weight.  Fray lineup w/o metro and samantha late does not work with fair index = 1 ATM.
-
-- make warnings useful for beam schedule
+- make warnings useful for beam schedule, especially not enough players warning
 - handle when no fair lineups are found for beam schedule
 - might be a bug right now updating page causes no lineups to be created on next schedule creation.  likely due to global variables/state.
 
@@ -25,6 +22,8 @@
 
 - 
 - determine how to track progress for slow algorithm to show to user
+- use a progress estimator based on accelaration.  use velocity as fallback if acceleration cannot be calculated
+
 - describe algorithm and big O 
 - add comments to algorithm
 
@@ -74,3 +73,11 @@ DONE beam schedule not enough players provided
 DONE factor out player count . innings_played... put it in greedy scheduler class
 DONE Create service module. softball service -> move functions out of models to keep them thin. Can also move data here as data service.
 DONE allow user to choose fast or slow algorithm (performance or quality)
+
+3/9/2026 1.5 hours
+DONE connect beam schedule sitting + late columns to UI
+FIXED Fray lineup w/o metro and samantha late does not work with fair index = 1 ATM.
+DONE improved speed and minimum viable algorithm, added caching
+
+3/14/2026 3 hours
+STARTED Working on estimator for progress

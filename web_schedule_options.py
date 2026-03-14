@@ -1,7 +1,7 @@
 import streamlit as st
 from softball_models.player import Player
 from softball_models.schedule import Schedule
-from softball_models.schedule_config import ScheduleConfig, SchedulerType
+from softball_models.schedule_config import ScheduleConfig, SchedulerType, QualityLevel
 from typing import List
 
 
@@ -48,9 +48,10 @@ def render_schedule_options(players: List[Player]) -> ScheduleConfig:
     #
     fairness_index = None
     sigma_weight = None
-    if schedule_type == SchedulerType.BEAM:
+    if schedule_type in {SchedulerType.BEAM, SchedulerType.DP}:
         fairness_index = st.number_input("Fair Factor", min_value=1, max_value=number_innings, value=2, key="fairness_index")
-        sigma_weight = st.toggle("Prioritize Consistency", key="sigma_weight")
+        sigma_weight = st.toggle("Prioritize Consistency", key="sigma_weight", value=True)
+        quality_level = st.selectbox("Quality Level", ["low", "medium", "high"], index=2)
         st.divider()
 
     config.number_innings = number_innings
@@ -60,5 +61,6 @@ def render_schedule_options(players: List[Player]) -> ScheduleConfig:
     config.schedule_type = schedule_type
     config.fair_factor = fairness_index
     config.sigma_weight = 2 if sigma_weight else 0
+    config.quality_level = QualityLevel(quality_level)
     return config
 

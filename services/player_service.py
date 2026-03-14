@@ -22,12 +22,12 @@ def get_default_players():
         Player("Jacob", True, False, False, [_2B, _1B], [9, 6]),
         Player("Hubie", True, False, False, [_3B, _1B], [4, 6]),
         Player("Ruby", True, True, False, [_3B, _RF, _C, _2B], [6, 7, 7, 4]),
-        # Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
-        # Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
-        # Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
-        # Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),
-        # Player("Louis", True, True, False, [_SS, _2B, _1B], [7, 7, 7]),
-        # Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
+        Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),
+        Player("Louis", True, True, False, [_SS, _2B, _1B], [7, 7, 7]),
+        Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
     ]
 
 
@@ -144,6 +144,8 @@ def dataframe_to_players(df: pd.DataFrame) -> List[Player]:
         available = row.get("Available")
         late = row.get("Late")
 
+        print(idx, name)
+
         # Skip if name is missing or blank
         if not isinstance(name, str) or not name.strip():
             continue
@@ -164,7 +166,7 @@ def dataframe_to_players(df: pd.DataFrame) -> List[Player]:
             # continue
 
         # Create and collect Player object
-        players.append(Player(name, available, female, late, player_positions, strengths))
+        players.append(Player(name, available, female, late, player_positions, strengths, idx))
 
     #
     # Updating positions so that if a player can play one outfield position

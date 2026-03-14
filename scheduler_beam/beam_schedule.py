@@ -3,6 +3,7 @@ import statistics
 import traceback
 from typing import Any, List, Set
 
+from scheduler.progress_callback import ProgressCallback
 from scheduler_beam.beam_inning import Inning, LineupNode
 from services.inning_service import get_all_possible_innings
 from services.player_service import get_early_players, get_late_players
@@ -10,7 +11,7 @@ from services.position_service import get_positions
 from softball_models.player import Player
 
 from softball_models.schedule import Schedule
-from softball_models.schedule_config import ScheduleConfig
+from softball_models.schedule_config import QualityLevel, ScheduleConfig
 
 from utils.math import clamp, get_percentile_item
 from utils.timing import add_time, print_times
@@ -25,7 +26,7 @@ import math
     
 class BeamScheduler:
 
-    def __init__(self, players: List[Player], config: ScheduleConfig):
+    def __init__(self, players: List[Player], config: ScheduleConfig, progress_callback: ProgressCallback):
         self.config: ScheduleConfig = config
         self.players: List[Player] = players
         self.fairness: int = config.fair_factor
@@ -44,13 +45,21 @@ class BeamScheduler:
         self.best_score: float = 0
         self.paths: Set[Any] = set()
 
+        self.progress_callback = progress_callback
+
+        self.percentiles = { 
+            QualityLevel.HIGH: [0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.7, 1],
+            QualityLevel.MEDIUM: [0, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 0.7],
+            QualityLevel.LOW: [0, 0.02, 0.05, 0.15]
+            }[config.quality_level]
+        
+        self.total_leafs = len(self.percentiles) ** config.number_innings
+
 
     @staticmethod
-    def create(players: List[Player], config: ScheduleConfig):
+    def create(players: List[Player], config: ScheduleConfig, progress_callback: ProgressCallback):
 
-        start = time.time()
-
-        scheduler = BeamScheduler(players, config)
+        scheduler = BeamScheduler(players, config, progress_callback)
         return scheduler.schedule()
 
     def schedule(self):
@@ -95,11 +104,6 @@ class BeamScheduler:
 
         i = self.config.number_innings
         while node and node.lineup:
-            # print()
-            # print(i)
-            # print(node.lineup.strength)
-            # print(node.lineup.field)
-
             # TODO clean this up, could do a node_to_schedule function
             schedule.innings.append(node.lineup)
 
@@ -119,6 +123,11 @@ class BeamScheduler:
         print(self._minimum_viable_score.cache_clear())
         print(self._get_fair_lineups.cache_clear())
         return schedule
+    
+    def _report_progress(self, depth):
+        completed = len(self.percentiles) ** (self.config.number_innings - depth + 1) 
+        percent_completed = completed / self.total_leafs
+        self.progress_callback(percent_completed)
     
     def _get_lineups(self, inning):
         if self.config.inning_of_late_arrivals <= inning:
@@ -141,53 +150,50 @@ class BeamScheduler:
     def _depth_first(self, node: LineupNode, results: List[Any], current_depth: int = 1):
         start = time.time()
 
+        if node.hash in self.paths:
+            self._report_progress(current_depth)
+            return
+        self.paths.add(node.hash)
+
         if current_depth > self.config.number_innings:
             # we have a leaf node
             results.append(node)
             score = self._score(node)
             if self.best_score <= score:
                 self.best_score = score
+            self._report_progress(current_depth)
             return
         
-        minimum_viable_score = 0
-        if current_depth > 1 and self.best_score != 0:
-            minimum_viable_score = self._minimum_viable_score(frozenset(node.get_stregnths()), current_depth)
-
-        # print()
-        # print(f"======== Calling fair lineups, depth {current_depth} ========")
-        fair_lineups = self._get_fair_lineups(frozenset(node.cumulative_counts.counter.items()), current_depth, int(minimum_viable_score))
-
-        if not fair_lineups:
-            # print("No fair lineups", "depth", current_depth)
+        lineups = self._get_potential_lineups(node, current_depth)
+      
+        if not lineups:
+            self._report_progress(current_depth)
             return
         
-        # TODO store in variable in class, take as param
-        percentiles = [0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.7, 1]
-        # percentiles = [0]
-        
-        for percentile in percentiles:
+        for percentile in self.percentiles:
             try:
-                if current_depth == self.config.inning_of_late_arrivals:
-                    node.cumulative_counts.rebase()
-                    node.cumulative_counts.add_players(self.late_players)
-
-                lineup = get_percentile_item(fair_lineups, percentile)
+                lineup = get_percentile_item(lineups, percentile)
                 next = LineupNode(lineup, node)
 
-                if next.hash not in self.paths:
-                    self._depth_first(next, results, current_depth+1)
-                    node.next.append(next)
-                    self.paths.add(next.hash)
-
+                self._depth_first(next, results, current_depth+1)
 
             except Exception as e:
-                # continue
-                print(e)
                 traceback.print_exc()
-                print("ERRROROR")
                 break
 
         add_time("depth_first", start)
+
+    def _get_potential_lineups(self, node: LineupNode, depth: int):
+        if depth > self.config.inning_of_late_arrivals:
+            node.cumulative_counts.add_players(self.late_players)
+
+        minimum_viable_score = 0
+        if depth > 1 and self.best_score != 0:
+            minimum_viable_score = self._minimum_viable_score(frozenset(node.get_stregnths()), depth)
+
+        node.cumulative_counts.rebase()
+        return self._get_fair_lineups(frozenset(node.cumulative_counts.counter.items()), depth, int(minimum_viable_score))
+
 
     @cache
     def _get_fair_lineups(self, counts: frozenset, current_depth: int, minimum: int = 0):
@@ -209,7 +215,6 @@ class BeamScheduler:
         for lineup in lineups:
 
             if lineup.strength < minimum:
-                # print("Weak, breaking")
                 break
 
             fair = True
@@ -236,8 +241,6 @@ class BeamScheduler:
 
             if fair:
                 fair_lineups.append(lineup)
-
-        # print("Fair lineups found", len(fair_lineups), node.cumulative_counts.counter)
 
         add_time("get_fair_lineups", start)
 

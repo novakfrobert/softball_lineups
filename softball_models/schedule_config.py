@@ -5,7 +5,12 @@ from enum import Enum
 class SchedulerType(Enum):
     GREEDY = "Greedy"
     BEAM   = "Beam"
+    DP     = "Dp"
 
+class QualityLevel(Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 class ScheduleConfig:
 
@@ -20,3 +25,4 @@ class ScheduleConfig:
     # Beam schedule parameters
     fair_factor: int = 2
     sigma_weight: float = 2.0
+    quality_level: QualityLevel = QualityLevel.HIGH

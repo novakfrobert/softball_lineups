@@ -36,6 +36,7 @@ class LineupNode:
         self.next = []
 
         if prev:
+            prev.next.append(self)
             self.depth = prev.depth + 1
             self.hash = self._hash()
             self.cumulative_counts = prev.cumulative_counts.copy()

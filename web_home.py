@@ -10,6 +10,7 @@ from softball_models.schedule_config import ScheduleConfig
 from scheduler.schedule_factory import ScheduleFactory
 from services.player_service import get_default_players
 
+from streamlit_ext import ProgressReporter
 from utils.timing import reset_times
 from web_schedule_options import render_schedule_options
 from web_players import render_players
@@ -44,21 +45,15 @@ def render_home():
         with st.sidebar:
             schedule_config: ScheduleConfig = render_schedule_options(players)
 
-        with col_main:
-            # TODO, work into schedule config
-            # fairness_index = 2
-            # sigma_weight = 2
+        with col_main, ProgressReporter.create("Creating schedule...") as progress:
             try:
-                # pass
-                schedule = ScheduleFactory.create(players, schedule_config)
+                schedule = ScheduleFactory.create(players, schedule_config, progress)
                 render_schedule(schedule)
 
             except Exception as e:
-                print("Beam schedule failed:", e)
-                print(traceback.print_exc(file=sys.stdout) )
-                print("continuing from failed beam schedule...")
-
                 st.write("Failed to create schedule.")
+                print("Schedule failed:", e)
+                print(traceback.print_exc(file=sys.stdout) )
 
 
 
