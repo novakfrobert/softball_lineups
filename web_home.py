@@ -1,24 +1,34 @@
+import sys
+import traceback
 import streamlit as st
-from softball_beam_schedule import beam_schedule
-from softball_data import load_players_from_csv, players_to_df, dataframe_to_players, get_default_players
-from softball_player import Player
-from softball_schedule import Schedule, ScheduleConfig
 from typing import List
-from streamlit_ext import CsvUploader, DataTable
+
+from softball_models.player import Player
+from softball_models.schedule import Schedule
+from softball_models.schedule_config import QualityLevel, ScheduleConfig
+
+from scheduler.schedule_factory import ScheduleFactory
+from services.player_service import get_default_players
+
+from streamlit_ext import ProgressReporter
+from utils.timing import reset_times
 from web_schedule_options import render_schedule_options
 from web_players import render_players
 from web_schedule import render_schedule
+
 
 def render_home():
 
     print()
     print()
     print("New Render")
+    reset_times()
 
     if "players" not in st.session_state:
         st.session_state.players = get_default_players()
 
     players: List[Player] = st.session_state.players
+    print("from state", players)
 
     st.set_page_config(
         page_title="Softball Lineup",     # 📝 Tab title
@@ -35,14 +45,16 @@ def render_home():
         with st.sidebar:
             schedule_config: ScheduleConfig = render_schedule_options(players)
 
-        with col_main:
-            schedule: Schedule = Schedule.create(players, schedule_config)
+        with col_main, ProgressReporter.create("Creating schedule...") as progress:
+            try:
+                schedule = ScheduleFactory.create(players, schedule_config, progress)
+                render_schedule(schedule)
 
-            # players = players
-            # for p in players:
-                # p.innings_played = 0
-            # beam_schedule(schedule_config.number_innings, Schedule.get_positions(schedule_config.players_required), players, schedule_config.females_required)
+            except Exception as e:
+                st.write("Failed to create schedule.")
+                print("Schedule failed:", e)
+                print(traceback.print_exc(file=sys.stdout) )
 
-            render_schedule(schedule)
+
 
     print("Finish")

@@ -2,30 +2,36 @@ import math
 import csv
 import numpy as np
 import pandas as pd
-from softball_player import Player
+from softball_models.player import Player
+from services.position_service import _1B, _2B, _3B, _C, _LCF, _LF, _P, _RCF, _RF, _SS, get_position
 from typing import List
 
 def get_default_players():
     return [
-        Player("Frank", True, False, False, ["LF","LCF","RCF"], [9, 8, 8]),
-        Player("Joe", True, False, False, ["LF","LCF","RF"], [8, 9, 8]),
-        Player("Janelle", True, True, False, ["2B", "3B", "RF", "P"], [9, 5, 4, 5]),
-        Player("Frido", True, False, False, ["LF","LCF","RCF", "SS", "3B"], [6, 6, 6, 6, 6]),
-        Player("Dude", True, False, False, ["1B","LF", "3B"], [8, 10, 10]),
-        Player("Guy", True, False, False, ["C","RF","RCF", "2B", "3B", "1B"], [5, 5, 5, 3, 2, 3]),
-        Player("Jackie", True, True, False, ["C","LCF","RCF"], [6, 6, 6]),
-        Player("Daniella", True, True, False, ["2B","RCF","RF"], [6, 6, 6]),
-        Player("Nick", True, False, False, ["SS","1B","RCF", "LCF", "3B"], [7, 8, 7, 7, 7]),
-        Player("Jacob", True, False, False, ["2B", "1B"], [9, 6]),
-        Player("Ruby", True, True, False, ["3B","RF","C", "2B"], [6, 7, 7, 4]),
-        Player("Gary", True, False, False, ["SS","LF","LCF"], [7, 7, 7])
+        Player("Frank", True, False, False, [_LF, _LCF, _RCF], [9, 8, 8]),
+        Player("Joe", True, False, False, [_LF, _LCF, _RF], [8, 9, 8]),
+        Player("Janelle", True, True, False, [_2B, _3B, _RF, _P], [9, 5, 4, 5]),
+        Player("Kristy", True, True, False, [_SS, _3B, _RF, _P, _C], [6, 7, 4, 5, 3]),
+        Player("Frido", True, False, False, [_LF, _LCF, _RCF, _SS, _3B], [6, 6, 6, 6, 6]),
+        Player("Dude", True, False, False, [_1B, _LF, _3B], [8, 10, 10]),
+        Player("Guy", True, False, False, [_C, _RF, _RCF, _2B, _3B, _1B], [5, 5, 5, 3, 2, 3]),
+        Player("Jackie", True, True, False, [_C, _LCF, _RCF], [6, 6, 6]),
+        Player("Daniella", True, True, False, [_2B, _RCF, _RF], [6, 6, 6]),
+        Player("Nick", True, False, False, [_SS, _1B, _RCF, _LCF, _3B], [7, 8, 7, 7, 7]),
+        Player("Rob", True, False, False, [_2B, _1B, _RCF, _LCF, _3B], [3, 5, 6, 6, 7]),
+        Player("Jacob", True, False, False, [_2B, _1B], [9, 6]),
+        Player("Hubie", True, False, False, [_3B, _1B], [4, 6]),
+        Player("Ruby", True, True, False, [_3B, _RF, _C, _2B], [6, 7, 7, 4]),
+        Player("Gary", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("George", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Freddy", True, False, False, [_SS, _LF, _LCF], [7, 7, 7]),
+        Player("Hal", True, False, False, [_3B, _RF, _LCF], [7, 7, 7]),
+        Player("Louis", True, True, False, [_SS, _2B, _1B], [7, 7, 7]),
+        Player("Dewey", True, False, False, [_RCF, _P, _C], [7, 7, 7])
     ]
 
-def sort_players(position: str, players: List[Player]):
-    players.sort(key=lambda p: (p.innings_played, -1*p.positions_stengths[position]))
 
-
-def load_players_from_csv(csv_file: str):
+def load_players_from_csv(csv_file: str) -> List[Player]:
 
     players = []
     reader = csv.reader(csv_file.read().decode("utf-8-sig").splitlines())
@@ -66,14 +72,14 @@ def load_players_from_csv(csv_file: str):
         strengths = []
         for i, str in enumerate(row[col(4):], col(4)):
             if str:
-                positions.append(header[i])
+                positions.append(get_position(header[i]))
                 strengths.append(int(str))
 
         players.append(Player(name, available, female, late, positions, strengths))
 
     return players
 
-def players_to_df(players: List["Player"]) -> pd.DataFrame:
+def players_to_df(players: List[Player]) -> pd.DataFrame:
     # Define all possible positions
     positions = ["P", "SS", "LF", "LCF", "3B", "2B", "1B", "RCF", "RF", "C"]
 
@@ -87,7 +93,8 @@ def players_to_df(players: List["Player"]) -> pd.DataFrame:
             "Late": p.late,
         }
         for pos in positions:
-            row[pos] = p.positions_stengths.get(pos, float("NaN"))
+            ppos = get_position(pos)
+            row[pos] = p.positions_stengths.get(ppos, float("NaN"))
         data.append(row)
 
     # Create the dataframe
@@ -116,8 +123,8 @@ def players_to_df(players: List["Player"]) -> pd.DataFrame:
     return df
 
 # Convert edited dicts back to Player list
-def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
-    players = []
+def dataframe_to_players(df: pd.DataFrame) -> List[Player]:
+    players: List[Player] = []
 
     positions = ["P", "SS", "LF", "LCF", "3B", "2B", "1B", "RCF", "RF", "C"]
 
@@ -137,6 +144,8 @@ def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
         available = row.get("Available")
         late = row.get("Late")
 
+        print(idx, name)
+
         # Skip if name is missing or blank
         if not isinstance(name, str) or not name.strip():
             continue
@@ -149,7 +158,7 @@ def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
             strength = row.get(pos)
             if strength is None or (isinstance(strength, float) and math.isnan(strength)):
                 continue
-            player_positions.append(pos)
+            player_positions.append(get_position(pos))
             strengths.append(float(strength))
 
         # Skip rows with no valid position strengths
@@ -157,6 +166,32 @@ def dataframe_to_players(df: pd.DataFrame) -> List["Player"]:
             # continue
 
         # Create and collect Player object
-        players.append(Player(name, available, female, late, player_positions, strengths))
+        players.append(Player(name, available, female, late, player_positions, strengths, idx))
+
+    #
+    # Updating positions so that if a player can play one outfield position
+    # then they can play the equivalent position for a understaffed team.
+    #
+    lcf = get_position("LCF")
+    cf = get_position("CF")
+    rcf = get_position("RCF")
+    rf = get_position("RCF")
+
+    def update_player_positions(old, new):
+        if old in player.positions:
+            player.positions.add(new)
+            player.positions_stengths[new] = player.positions_stengths[old]
+
+    for player in players:
+        update_player_positions(lcf, cf)
+        update_player_positions(rcf, rf)
+
 
     return players
+
+     
+def get_late_players(players: List[Player]):
+    return [p for p in players if p.available and p.late]
+
+def get_early_players(players: List[Player]):
+    return [p for p in players if p.available and not p.late]
