@@ -3,7 +3,6 @@ import statistics
 import traceback
 from typing import Any, List, Set
 
-from scheduler_beam.WIP_eta_predictor import ETAPredictor
 from scheduler.progress_callback import ProgressCallback
 from scheduler_beam.beam_eta_predictor import BeamEtaPredictor
 from scheduler_beam.beam_inning import Inning, LineupNode
