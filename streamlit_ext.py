@@ -1,12 +1,9 @@
-from collections import deque
 from math import log
-import math
 import time
 
 import streamlit as st
-from typing import Callable
 
-from eta_predictor import ETAPredictor
+from utils.debug import dbg
 from utils.math import clamp
 
 class CsvUploader:
@@ -78,9 +75,11 @@ class ProgressReporter:
         self.total_progress: float = 0
         self.msg: str = msg
         self.progress_bar = None
-        self.eta_predictor: ETAPredictor = ETAPredictor()
-        self.update_threshold = 0.0033
-        self.last_updated = 0
+        self.update_threshold_pct = 0.02
+        self.update_threshold_time = .1
+        self.last_updated_pct = 0
+        self.last_updated_ui = 0
+        self.last_updated_time = 0
 
     def __enter__(self):
         self.progress_bar = st.progress(0, self.msg)
@@ -95,25 +94,30 @@ class ProgressReporter:
 
     def __call__(self, inc_progress: float, msg: str = "Default"):
 
+        now = time.perf_counter()
+
         self.total_progress += inc_progress
         percent =  self.total_progress * 100
 
-        if self.total_progress - self.last_updated < self.update_threshold:
+        d_pct = self.total_progress - self.last_updated_pct
+        d_time = now - self.last_updated_time
+        
+        if d_time < self.update_threshold_time:
             return
         
-        eta = None
-        if self.eta_predictor:
-            eta = self.eta_predictor.update(percent)
-
         if msg == "Default":
             self.msg = f"{percent:.2f}% complete."
-            if eta:
-                self.msg += f" {eta:.0f} seconds remaining"
             # print(self.msg)
         elif msg:
             self.msg = msg
 
+        self.last_updated_pct = self.total_progress
+        self.last_updated_time = now
+
+        if now - self.last_updated_ui < 0.1:
+            return
 
         self.progress_bar.progress(self.total_progress, text=self.msg)
-        self.last_updated = self.total_progress
+        self.last_updated_ui = now
+
 

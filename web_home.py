@@ -5,7 +5,7 @@ from typing import List
 
 from softball_models.player import Player
 from softball_models.schedule import Schedule
-from softball_models.schedule_config import ScheduleConfig
+from softball_models.schedule_config import QualityLevel, ScheduleConfig
 
 from scheduler.schedule_factory import ScheduleFactory
 from services.player_service import get_default_players

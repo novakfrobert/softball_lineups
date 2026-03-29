@@ -3,7 +3,9 @@ import statistics
 import traceback
 from typing import Any, List, Set
 
+from scheduler_beam.WIP_eta_predictor import ETAPredictor
 from scheduler.progress_callback import ProgressCallback
+from scheduler_beam.beam_eta_predictor import BeamEtaPredictor
 from scheduler_beam.beam_inning import Inning, LineupNode
 from services.inning_service import get_all_possible_innings
 from services.player_service import get_early_players, get_late_players
@@ -45,17 +47,15 @@ class BeamScheduler:
         self.best_score: float = 0
         self.paths: Set[Any] = set()
 
-        self.progress_callback = progress_callback
-
         self.percentiles = { 
             QualityLevel.HIGH: [0, 0.01, 0.02, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.7, 1],
             QualityLevel.MEDIUM: [0, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 0.7],
             QualityLevel.LOW: [0, 0.02, 0.05, 0.15]
             }[config.quality_level]
         
-        self.total_leafs = len(self.percentiles) ** config.number_innings
-
-
+        self.reporter = BeamEtaPredictor(progress_callback, 
+                                         len(self.percentiles),
+                                         config.number_innings)
     @staticmethod
     def create(players: List[Player], config: ScheduleConfig, progress_callback: ProgressCallback):
 
@@ -124,10 +124,6 @@ class BeamScheduler:
         print(self._get_fair_lineups.cache_clear())
         return schedule
     
-    def _report_progress(self, depth):
-        completed = len(self.percentiles) ** (self.config.number_innings - depth + 1) 
-        percent_completed = completed / self.total_leafs
-        self.progress_callback(percent_completed)
     
     def _get_lineups(self, inning):
         if self.config.inning_of_late_arrivals <= inning:
@@ -151,7 +147,7 @@ class BeamScheduler:
         start = time.time()
 
         if node.hash in self.paths:
-            self._report_progress(current_depth)
+            self.reporter.report(current_depth)
             return
         self.paths.add(node.hash)
 
@@ -161,13 +157,13 @@ class BeamScheduler:
             score = self._score(node)
             if self.best_score <= score:
                 self.best_score = score
-            self._report_progress(current_depth)
+            self.reporter.report(current_depth)
             return
         
         lineups = self._get_potential_lineups(node, current_depth)
       
         if not lineups:
-            self._report_progress(current_depth)
+            self.reporter.report(current_depth)
             return
         
         for percentile in self.percentiles:
@@ -184,7 +180,7 @@ class BeamScheduler:
         add_time("depth_first", start)
 
     def _get_potential_lineups(self, node: LineupNode, depth: int):
-        if depth > self.config.inning_of_late_arrivals:
+        if depth == self.config.inning_of_late_arrivals:
             node.cumulative_counts.add_players(self.late_players)
 
         minimum_viable_score = 0
