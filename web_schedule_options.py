@@ -48,10 +48,12 @@ def render_schedule_options(players: List[Player]) -> ScheduleConfig:
     #
     fairness_index = None
     sigma_weight = None
+    quality_level = None
     if schedule_type in {SchedulerType.BEAM, SchedulerType.DP}:
         fairness_index = st.number_input("Fair Factor", min_value=1, max_value=number_innings, value=2, key="fairness_index")
         sigma_weight = st.toggle("Prioritize Consistency", key="sigma_weight", value=True)
         quality_level = st.selectbox("Quality Level", ["low", "medium", "high"], index=2)
+        quality_level = QualityLevel(quality_level)
         st.divider()
 
     config.number_innings = number_innings
@@ -61,6 +63,6 @@ def render_schedule_options(players: List[Player]) -> ScheduleConfig:
     config.schedule_type = schedule_type
     config.fair_factor = fairness_index
     config.sigma_weight = 2 if sigma_weight else 0
-    config.quality_level = QualityLevel(quality_level)
+    config.quality_level = quality_level
     return config
 
